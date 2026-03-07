@@ -7,23 +7,25 @@ import { GlobalExceptionFilter } from './shared/exceptions/global-exception.filt
 import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-envelope.interceptor';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: envValidationSchema,
-      validationOptions: {
-        abortEarly: false,
-      },
+      validationOptions: { abortEarly: false },
     }),
     DatabaseModule,
     HealthModule,
     AuthModule,
     UsersModule,
     CategoriesModule,
+    PaymentMethodsModule,
+    TransactionsModule,
   ],
   providers: [
     {

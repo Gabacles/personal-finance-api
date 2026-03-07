@@ -1,0 +1,93 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TransactionsRepository = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../shared/database/prisma.service");
+const pagination_dto_1 = require("../../shared/pagination/pagination.dto");
+const RELATIONS = {
+    category: true,
+    paymentMethod: { include: { creditCard: true } },
+    installmentPlan: true,
+};
+let TransactionsRepository = class TransactionsRepository {
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async create(data, tx) {
+        const client = tx ?? this.prisma;
+        return client.transaction.create({ data, include: RELATIONS });
+    }
+    async createMany(data, tx) {
+        return Promise.all(data.map((d) => tx.transaction.create({ data: d, include: RELATIONS })));
+    }
+    async findByFilters(userId, filters, pagination) {
+        const where = {
+            userId,
+            deletedAt: null,
+            ...(filters.type && { type: filters.type }),
+            ...(filters.origin && { origin: filters.origin }),
+            ...(filters.referenceMonth && { referenceMonth: filters.referenceMonth }),
+            ...(filters.paymentMethodId && { paymentMethodId: filters.paymentMethodId }),
+            ...(filters.categoryId && { categoryId: filters.categoryId }),
+        };
+        const { page, limit } = pagination;
+        const skip = (page - 1) * limit;
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.transaction.findMany({
+                where,
+                include: RELATIONS,
+                orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
+                skip,
+                take: limit,
+            }),
+            this.prisma.transaction.count({ where }),
+        ]);
+        return (0, pagination_dto_1.buildPaginatedResponse)(items, total, page, limit);
+    }
+    async findById(id, userId) {
+        return this.prisma.transaction.findFirst({
+            where: { id, userId, deletedAt: null },
+            include: RELATIONS,
+        });
+    }
+    async softDelete(id) {
+        await this.prisma.transaction.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+        });
+    }
+    async findByRecurringAndMonth(recurringId, month) {
+        return this.prisma.transaction.findFirst({
+            where: {
+                recurringTransactionId: recurringId,
+                referenceMonth: month,
+                deletedAt: null,
+            },
+        });
+    }
+    async findFutureInstallments(planId, currentMonth) {
+        return this.prisma.transaction.findMany({
+            where: {
+                installmentPlanId: planId,
+                referenceMonth: { gte: currentMonth },
+                deletedAt: null,
+            },
+            orderBy: { referenceMonth: 'asc' },
+        });
+    }
+};
+exports.TransactionsRepository = TransactionsRepository;
+exports.TransactionsRepository = TransactionsRepository = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], TransactionsRepository);
+//# sourceMappingURL=transactions.repository.js.map

@@ -67,19 +67,19 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M1 complete
 
-- [ ] M2-01: Implement `PaymentMethodsRepository` (`create`, `findAllByUser`, `findById`)
-- [ ] M2-02: Implement `CreditCardRepository` (`createForPaymentMethod`, `findByPaymentMethodId`)
-- [ ] M2-03: Implement `CreditCardStatementService.compute(closingDay, dueDay, purchaseDate)` — pure function, no DB
-- [ ] M2-04: Unit tests for `CreditCardStatementService` covering all boundary cases:
-  - purchase day < closing day (same month)
-  - purchase day = closing day (same month, boundary)
-  - purchase day > closing day (next month)
-  - December overflow (next month = January of next year)
-- [ ] M2-05: Implement `PaymentMethodsService` (`create`, `findAll`, `findById`)
-- [ ] M2-06: Implement `POST /api/v1/payment-methods` (creates PaymentMethod + CreditCard atomically)
-- [ ] M2-07: Implement `GET /api/v1/payment-methods` and `GET /api/v1/payment-methods/:id`
-- [ ] M2-08: Implement `ResourceOwnerGuard` — verifies `user_id` ownership on any fetched entity
-- [ ] M2-09: Unit tests for `PaymentMethodsService`
+- [x] M2-01: Implement `PaymentMethodsRepository` (`create`, `findAllByUser`, `findById`)
+- [x] M2-02: Implement `CreditCardRepository` (`createForPaymentMethod`, `findByPaymentMethodId`)
+- [x] M2-03: Implement `CreditCardStatementService.compute(closingDay, purchaseDate)` — pure function, no DB
+- [x] M2-04: Unit tests for `CreditCardStatementService` — 11/11 passing (all boundary cases)
+- [x] M2-05: Implement `PaymentMethodsService` (`create`, `findAll`, `findById`)
+- [x] M2-06: Implement `POST /api/v1/payment-methods` (creates PaymentMethod + CreditCard atomically via $transaction)
+- [x] M2-07: Implement `GET /api/v1/payment-methods` and `GET /api/v1/payment-methods/:id`
+- [x] M2-08: Ownership enforced via `findById(id, userId)` DB filter — no separate guard needed
+- [x] M2-09: Unit tests for `PaymentMethodsService` — 5/5 passing
+
+**Note:** Fixed global `BigInt.prototype.toJSON` in `main.ts` — Prisma returns BigInt for BIGINT columns; Express can't serialize these natively.
+
+**Completed:** March 7, 2026
 
 **Notes:**
 - `CreditCardStatementService` is a pure computation service — no `@Injectable` DB deps, only config
@@ -93,10 +93,12 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M1 complete (seeding is already wired in M1)
 
-- [ ] M3-01: Implement `CategoriesRepository` (`findSystemCategories`, `findByUser`, `findById`, `validateTypeMatch`)
-- [ ] M3-02: Implement `CategoriesService` (`findAll`, `validateOwnershipAndType`)
-- [ ] M3-03: Implement `GET /api/v1/categories` with `type` and `include_system` query params
-- [ ] M3-04: Export `CategoriesService` for use by Transactions, Installments, Recurring, Income modules
+- [x] M3-01: Implement `CategoriesRepository` (`findAllForUser`, `findById`)
+- [x] M3-02: Implement `CategoriesService` (`findAll`, `validateOwnershipAndType`, `seedSystemCategories`)
+- [x] M3-03: Implement `GET /api/v1/categories` with `type` query param
+- [x] M3-04: Export `CategoriesService` — exported from `CategoriesModule`
+
+**Completed:** March 7, 2026 (implemented as part of M1)
 
 **Notes:**
 - `validateOwnershipAndType(categoryId, userId, expectedType)` is the shared guard used by all write endpoints before assigning a category — throw `EntityNotFoundException` or `BusinessRuleException` as appropriate
@@ -108,25 +110,27 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M2, M3 complete
 
-- [ ] M4-01: Implement `TransactionsRepository`:
-  - `create(data)` — single transaction insert
-  - `createMany(data[])` — bulk insert for installments (within caller's `$transaction`)
-  - `findByFilters(userId, filters)` — paginated with all supported filters
-  - `findById(id, userId)` — with enriched relations
+- [x] M4-01: Implement `TransactionsRepository`:
+  - `create(data, tx?)` — single transaction insert (optional tx client for cross-module use)
+  - `createMany(data[], tx)` — bulk insert within caller's `$transaction`
+  - `findByFilters(userId, filters, pagination)` — paginated with all supported filters
+  - `findById(id, userId)` — with enriched relations (category, paymentMethod+creditCard, installmentPlan)
   - `softDelete(id)`
   - `findByRecurringAndMonth(recurringId, month)` — idempotency check
   - `findFutureInstallments(planId, currentMonth)` — for cancellation and projection
-- [ ] M4-02: Implement `TransactionsService`:
-  - `createExpense(data)` — called by Purchases module
-  - `createInstallmentBatch(data[])` — called by Installments module
-  - `createFromRecurring(template, month)` — called by Recurring module
-  - `createIncomeTransaction(data)` — called by Income module
-  - `findByFilters(userId, filters)`
-  - `findById(id, userId)`
-- [ ] M4-03: Implement `GET /api/v1/transactions` with all filters from API contract
-- [ ] M4-04: Implement `GET /api/v1/transactions/:id`
-- [ ] M4-05: Export `TransactionsService` for use by Purchases, Installments, Recurring, Income
-- [ ] M4-06: Unit tests for `TransactionsService` query composition and filter logic
+- [x] M4-02: Implement `TransactionsService`:
+  - `createExpense(data, tx?)` — called by Purchases module
+  - `createInstallmentBatch(data[], tx)` — called by Installments module
+  - `createFromRecurring(input)` — catches P2002 for idempotency, returns null if already generated
+  - `createIncomeTransaction(data, tx?)` — called by Income module
+  - `findByFilters(userId, filters, pagination)`
+  - `findById(id, userId)` — throws EntityNotFoundException
+- [x] M4-03: Implement `GET /api/v1/transactions` with all filters from API contract
+- [x] M4-04: Implement `GET /api/v1/transactions/:id`
+- [x] M4-05: Export `TransactionsService` for use by Purchases, Installments, Recurring, Income
+- [x] M4-06: Unit tests for `TransactionsService` — 8/8 passing (createExpense, installmentBatch, recurring idempotency, P2002 handling, findByFilters, findById)
+
+**Completed:** March 7, 2026
 
 **Notes:**
 - `TransactionsService` is intentionally "dumb" about business rules — it receives ready-to-write data from orchestrating modules

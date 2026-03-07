@@ -16,8 +16,10 @@ const global_exception_filter_1 = require("./shared/exceptions/global-exception.
 const response_envelope_interceptor_1 = require("./shared/interceptors/response-envelope.interceptor");
 const health_module_1 = require("./health/health.module");
 const auth_module_1 = require("./modules/auth/auth.module");
-const users_module_1 = require("./modules/users/users.module");
 const categories_module_1 = require("./modules/categories/categories.module");
+const payment_methods_module_1 = require("./modules/payment-methods/payment-methods.module");
+const transactions_module_1 = require("./modules/transactions/transactions.module");
+const users_module_1 = require("./modules/users/users.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -27,15 +29,15 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
                 validationSchema: env_validation_1.envValidationSchema,
-                validationOptions: {
-                    abortEarly: false,
-                },
+                validationOptions: { abortEarly: false },
             }),
             database_module_1.DatabaseModule,
             health_module_1.HealthModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             categories_module_1.CategoriesModule,
+            payment_methods_module_1.PaymentMethodsModule,
+            transactions_module_1.TransactionsModule,
         ],
         providers: [
             {

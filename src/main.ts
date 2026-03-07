@@ -3,6 +3,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+// Teach JSON.stringify to handle Prisma BigInt fields (money as integer cents).
+// All cent values are well within Number.MAX_SAFE_INTEGER so Number conversion is safe.
+(BigInt.prototype as unknown as { toJSON: () => number }).toJSON = function (
+  this: bigint,
+) {
+  return Number(this);
+};
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
