@@ -1,0 +1,74 @@
+import { Injectable } from '@nestjs/common';
+import { PaymentMethodType } from '@prisma/client';
+import { PrismaService } from '../../shared/database/prisma.service';
+import {
+  BusinessRuleException,
+  EntityNotFoundException,
+} from '../../shared/exceptions/domain.exceptions';
+import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
+import {
+  PaymentMethodWithCard,
+  PaymentMethodsRepository,
+} from './payment-methods.repository';
+
+@Injectable()
+export class PaymentMethodsService {
+  constructor(
+    private readonly paymentMethodsRepository: PaymentMethodsRepository,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  async create(
+    userId: string,
+    dto: CreatePaymentMethodDto,
+  ): Promise<PaymentMethodWithCard> {
+    if (
+      dto.type === PaymentMethodType.CREDIT_CARD &&
+      !dto.creditCard
+    ) {
+      throw new BusinessRuleException(
+        'CREDIT_CARD_DETAILS_REQUIRED',
+        'Credit card details (closingDay, dueDay) are required for CREDIT_CARD type',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const paymentMethod = await tx.paymentMethod.create({
+        data: {
+          userId,
+          name: dto.name,
+          type: dto.type,
+          ...(dto.type === PaymentMethodType.CREDIT_CARD &&
+            dto.creditCard && {
+              creditCard: {
+                create: {
+                  closingDay: dto.creditCard.closingDay,
+                  dueDay: dto.creditCard.dueDay,
+                  creditLimitCents: dto.creditCard.creditLimitCents ?? null,
+                },
+              },
+            }),
+        },
+        include: { creditCard: true },
+      });
+
+      return paymentMethod;
+    });
+  }
+
+  async findAll(
+    userId: string,
+    type?: PaymentMethodType,
+  ): Promise<PaymentMethodWithCard[]> {
+    return this.paymentMethodsRepository.findAllByUser(userId, type);
+  }
+
+  async findById(
+    id: string,
+    userId: string,
+  ): Promise<PaymentMethodWithCard> {
+    const pm = await this.paymentMethodsRepository.findById(id, userId);
+    if (!pm) throw new EntityNotFoundException('PaymentMethod', id);
+    return pm;
+  }
+}
