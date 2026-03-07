@@ -19,7 +19,7 @@ export interface TransactionFilters {
     paymentMethodId?: string;
     categoryId?: string;
 }
-type PrismaTransactionClient = Omit<PrismaService, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+type PrismaTransactionClient = Prisma.TransactionClient;
 export declare class TransactionsRepository {
     private readonly prisma;
     constructor(prisma: PrismaService);

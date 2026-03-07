@@ -78,7 +78,7 @@ let TransactionsRepository = class TransactionsRepository {
         return this.prisma.transaction.findMany({
             where: {
                 installmentPlanId: planId,
-                referenceMonth: { gte: currentMonth },
+                referenceMonth: { gt: currentMonth },
                 deletedAt: null,
             },
             orderBy: { referenceMonth: 'asc' },

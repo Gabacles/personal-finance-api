@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, TransactionOrigin, TransactionType } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import {
-  EntityNotFoundException,
-} from '../../shared/exceptions/domain.exceptions';
+import { EntityNotFoundException } from '../../shared/exceptions/domain.exceptions';
 import {
   PaginatedResponse,
   PaginationDto,
@@ -13,6 +11,8 @@ import {
   TransactionWithRelations,
   TransactionsRepository,
 } from './transactions.repository';
+
+type PrismaTransactionClient = Prisma.TransactionClient;
 
 export interface CreateExpenseInput {
   userId: string;
@@ -60,11 +60,6 @@ export interface CreateIncomeTransactionInput {
   transactionDate: Date;
   notes?: string;
 }
-
-type PrismaTransactionClient = Omit<
-  import('../../shared/database/prisma.service').PrismaService,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
 
 @Injectable()
 export class TransactionsService {
@@ -131,11 +126,7 @@ export class TransactionsService {
         notes: input.notes,
       });
     } catch (err) {
-      if (
-        err instanceof PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
-        // Already generated for this recurring + month — idempotent, skip
+      if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
         return null;
       }
       throw err;
@@ -171,10 +162,7 @@ export class TransactionsService {
     return this.transactionsRepository.findByFilters(userId, filters, pagination);
   }
 
-  async findById(
-    id: string,
-    userId: string,
-  ): Promise<TransactionWithRelations> {
+  async findById(id: string, userId: string): Promise<TransactionWithRelations> {
     const txn = await this.transactionsRepository.findById(id, userId);
     if (!txn) throw new EntityNotFoundException('Transaction', id);
     return txn;

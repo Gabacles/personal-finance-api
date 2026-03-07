@@ -8,8 +8,10 @@ import { ResponseEnvelopeInterceptor } from './shared/interceptors/response-enve
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { InstallmentsModule } from './modules/installments/installments.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
+import { RecurringModule } from './modules/recurring/recurring.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -28,6 +30,8 @@ import { UsersModule } from './modules/users/users.module';
     PaymentMethodsModule,
     TransactionsModule,
     PurchasesModule,
+    InstallmentsModule,
+    RecurringModule,
   ],
   providers: [
     {

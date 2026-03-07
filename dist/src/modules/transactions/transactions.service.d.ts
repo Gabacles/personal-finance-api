@@ -1,6 +1,7 @@
-import { TransactionType } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
 import { PaginatedResponse, PaginationDto } from '../../shared/pagination/pagination.dto';
 import { TransactionFilters, TransactionWithRelations, TransactionsRepository } from './transactions.repository';
+type PrismaTransactionClient = Prisma.TransactionClient;
 export interface CreateExpenseInput {
     userId: string;
     categoryId?: string;
@@ -44,7 +45,6 @@ export interface CreateIncomeTransactionInput {
     transactionDate: Date;
     notes?: string;
 }
-type PrismaTransactionClient = Omit<import('../../shared/database/prisma.service').PrismaService, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 export declare class TransactionsService {
     private readonly transactionsRepository;
     constructor(transactionsRepository: TransactionsRepository);

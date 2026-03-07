@@ -28,10 +28,7 @@ export interface TransactionFilters {
   categoryId?: string;
 }
 
-type PrismaTransactionClient = Omit<
-  PrismaService,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+type PrismaTransactionClient = Prisma.TransactionClient;
 
 const RELATIONS = {
   category: true,
@@ -128,7 +125,7 @@ export class TransactionsRepository {
     return this.prisma.transaction.findMany({
       where: {
         installmentPlanId: planId,
-        referenceMonth: { gte: currentMonth },
+        referenceMonth: { gt: currentMonth },
         deletedAt: null,
       },
       orderBy: { referenceMonth: 'asc' },

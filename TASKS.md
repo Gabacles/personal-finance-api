@@ -171,37 +171,45 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M2, M3, M4 complete
 
-- [ ] M6-01: Implement `installment-calculator.ts` pure functions:
+- [x] M6-01: Implement `installment-calculator.ts` pure functions:
   - `calculateInstallmentAmounts(totalCents, count): number[]`
   - `computeInstallmentReferenceMonths(firstMonth, count): string[]`
-- [ ] M6-02: Unit tests for `installment-calculator.ts`:
+- [x] M6-02: Unit tests for `installment-calculator.ts`:
   - even division
   - remainder on last installment (single cent, multi-cent)
   - month increment overflow (December → January of next year)
-- [ ] M6-03: Implement `InstallmentsRepository`:
+- [x] M6-03: Implement `InstallmentsRepository`:
   - `create(plan)` — insert plan row
   - `findAllByUser(userId, filters)` — with derived remaining counts
   - `findById(id, userId)` — with all installment transactions
   - `findActiveByPaymentMethod(paymentMethodId)` — for deactivation guard
   - `cancel(planId)` — update status to CANCELLED
-- [ ] M6-04: Implement `InstallmentsService.create`:
+- [x] M6-04: Implement `InstallmentsService.create`:
   1. Validate payment method and category (same rules as M5)
   2. Validate `installment_count >= 2`
   3. Call `CreditCardStatementService.compute` → `firstReferenceMonth`
   4. Call `calculateInstallmentAmounts`, `computeInstallmentReferenceMonths`
   5. Open Prisma `$transaction`: create `InstallmentPlan` row + call `TransactionsService.createInstallmentBatch`
   6. Return plan with full installment schedule
-- [ ] M6-05: Implement `InstallmentsService.cancel`:
+- [x] M6-05: Implement `InstallmentsService.cancel`:
   1. Verify plan belongs to user, is `ACTIVE`
   2. Find all non-deleted installments where `reference_month > currentMonth`
   3. Soft-delete them in bulk
   4. Update plan status to `CANCELLED`
   5. Return count of cancelled and preserved installments
-- [ ] M6-06: Implement `InstallmentsService.findAll` with derived fields (`remaining_installments`, `remaining_amount_cents`, `next_installment_month`)
-- [ ] M6-07: Implement `POST /api/v1/installment-plans`
-- [ ] M6-08: Implement `GET /api/v1/installment-plans` and `GET /api/v1/installment-plans/:id`
-- [ ] M6-09: Implement `DELETE /api/v1/installment-plans/:id`
-- [ ] M6-10: Unit tests for `InstallmentsService` covering all business rules
+- [x] M6-06: Implement `InstallmentsService.findAll` with derived fields (`remaining_installments`, `remaining_amount_cents`, `next_installment_month`)
+- [x] M6-07: Implement `POST /api/v1/installment-plans`
+- [x] M6-08: Implement `GET /api/v1/installment-plans` and `GET /api/v1/installment-plans/:id`
+- [x] M6-09: Implement `DELETE /api/v1/installment-plans/:id`
+- [x] M6-10: Unit tests for `InstallmentsService` covering all business rules
+
+**Completed:** March 7, 2026
+
+**Notes:**
+- `installment-calculator.ts` — pure functions, no framework deps (10 unit tests)
+- `InstallmentsService` unit tests — 9/9 passing (51 total across 6 suites)
+- Cancellation uses `reference_month > currentMonth` (strictly greater, current month preserved)
+- `Prisma.TransactionClient` — correct type for `$transaction` callback (not `Omit<PrismaService, ...>`)
 
 ---
 
@@ -210,31 +218,35 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M2, M3, M4 complete
 
-- [ ] M7-01: Implement `RecurringRepository`:
+- [x] M7-01: Implement `RecurringRepository`:
   - `create(data)`
   - `findAllByUser(userId, filters)`
   - `findById(id, userId)`
   - `findActiveForMonth(userId, month)` — filters by `is_active`, `start_month`, `end_month`
   - `update(id, data)` — template properties only
   - `softDelete(id)`
-- [ ] M7-02: Implement `RecurringService.create` with validations:
+- [x] M7-02: Implement `RecurringService.create` with validations:
   - `INCOME` type → `payment_method_id` must be null
   - `EXPENSE` + `CREDIT_CARD` → `day_of_month` used for statement month computation
   - Category type must match transaction type
-- [ ] M7-03: Implement `RecurringService.generateForMonth(userId, month)`:
+- [x] M7-03: Implement `RecurringService.generateForMonth(userId, month)`:
   1. Query all active templates for the month
   2. For each: attempt `TransactionsService.createFromRecurring`
   3. Catch Prisma unique constraint error (`P2002` on `recurring_transaction_id` + `reference_month`) → skip silently (already generated)
   4. Return list of newly created transaction IDs
-- [ ] M7-04: Implement `RecurringService.update` — forward-only amount changes, immutable `start_month`
-- [ ] M7-05: Implement template CRUD endpoints (POST, GET list, GET one, PATCH, DELETE)
-- [ ] M7-06: Implement `PATCH /api/v1/recurring-transactions/:id/activate` and `/deactivate`
-- [ ] M7-07: Export `RecurringService` for use by Reporting modules
-- [ ] M7-08: Unit tests for `RecurringService.generateForMonth` (idempotency, active filter logic)
+- [x] M7-04: Implement `RecurringService.update` — forward-only amount changes, immutable `start_month`
+- [x] M7-05: Implement template CRUD endpoints (POST, GET list, GET one, PATCH, DELETE)
+- [x] M7-06: Implement `PATCH /api/v1/recurring-transactions/:id/activate` and `/deactivate`
+- [x] M7-07: Export `RecurringService` for use by Reporting modules
+- [x] M7-08: Unit tests for `RecurringService.generateForMonth` (idempotency, active filter logic)
+
+**Completed:** March 7, 2026
 
 **Notes:**
+- 16 unit tests (67 total across 7 suites), TypeScript clean, smoke tested all endpoints
 - `generateForMonth` is an internal method; it is not exposed as an HTTP endpoint
 - The idempotency guard is the database unique constraint — the service catches `P2002`, not a pre-check-then-insert pattern
+- `dayOfMonthToDateInMonth` clamps to last day of month to handle months with fewer days than dayOfMonth
 
 ---
 

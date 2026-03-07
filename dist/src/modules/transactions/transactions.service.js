@@ -66,8 +66,7 @@ let TransactionsService = class TransactionsService {
             });
         }
         catch (err) {
-            if (err instanceof library_1.PrismaClientKnownRequestError &&
-                err.code === 'P2002') {
+            if (err instanceof library_1.PrismaClientKnownRequestError && err.code === 'P2002') {
                 return null;
             }
             throw err;
