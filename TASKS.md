@@ -144,23 +144,25 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M2, M3, M4 complete
 
-- [ ] M5-01: Implement `PurchasesService.create`:
+- [x] M5-01: Implement `PurchasesService.create`:
   1. Validate payment method belongs to user and is `CREDIT_CARD`
   2. Validate category belongs to user (or is system) and has type `EXPENSE`
   3. Validate `purchase_date` is not in the future
-  4. Call `CreditCardStatementService.compute` → get `reference_month`, `due_date`
+  4. Call `CreditCardStatementService.compute` → get `reference_month`
   5. Call `TransactionsService.createExpense` with computed fields
   6. Return enriched transaction response
-- [ ] M5-02: Implement `POST /api/v1/purchases`
-- [ ] M5-03: Unit tests for `PurchasesService`:
-  - wrong payment method type
-  - future purchase date rejected
-  - category type mismatch
-  - correct reference_month returned in response
+- [x] M5-02: Implement `POST /api/v1/purchases`
+- [x] M5-03: Unit tests for `PurchasesService` — 6/6 passing:
+  - payment method not found → 404
+  - wrong payment method type → 422 PAYMENT_METHOD_NOT_CREDIT_CARD
+  - future purchase date → 422 FUTURE_PURCHASE_DATE
+  - category type mismatch → 422 CATEGORY_TYPE_MISMATCH
+  - correct reference_month (same month) returned in response
+  - next-month rollover when purchaseDay > closingDay
 
-**Notes:**
-- `PurchasesService` has no repository — it owns no table; it orchestrates `TransactionsService`
-- The `due_date` is returned in the response for client confirmation but is not stored — it is always derivable from `reference_month` + `credit_cards.due_day`
+**Note:** `PurchasesService` has no repository — it orchestrates `PaymentMethodsRepository`, `CategoriesService`, `TransactionsService`.
+
+**Completed:** March 7, 2026
 
 ---
 

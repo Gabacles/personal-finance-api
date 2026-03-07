@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { PurchasesModule } from './modules/purchases/purchases.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -26,6 +27,7 @@ import { UsersModule } from './modules/users/users.module';
     CategoriesModule,
     PaymentMethodsModule,
     TransactionsModule,
+    PurchasesModule,
   ],
   providers: [
     {

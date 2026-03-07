@@ -18,6 +18,7 @@ const health_module_1 = require("./health/health.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const categories_module_1 = require("./modules/categories/categories.module");
 const payment_methods_module_1 = require("./modules/payment-methods/payment-methods.module");
+const purchases_module_1 = require("./modules/purchases/purchases.module");
 const transactions_module_1 = require("./modules/transactions/transactions.module");
 const users_module_1 = require("./modules/users/users.module");
 let AppModule = class AppModule {
@@ -38,6 +39,7 @@ exports.AppModule = AppModule = __decorate([
             categories_module_1.CategoriesModule,
             payment_methods_module_1.PaymentMethodsModule,
             transactions_module_1.TransactionsModule,
+            purchases_module_1.PurchasesModule,
         ],
         providers: [
             {
