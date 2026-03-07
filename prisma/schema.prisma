@@ -1,0 +1,322 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum EmploymentType {
+  CLT
+  PJ
+  OTHER
+}
+
+enum PaymentMethodType {
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  CASH
+  OTHER
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+}
+
+enum TransactionOrigin {
+  ONE_TIME
+  INSTALLMENT
+  RECURRING
+  INCOME
+}
+
+enum InstallmentStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}
+
+enum DeductionTableType {
+  INSS
+  IRRF
+}
+
+// ---------------------------------------------------------------------------
+// Users
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String         @id @default(uuid())
+  name           String         @db.VarChar(100)
+  email          String         @unique @db.VarChar(255)
+  passwordHash   String         @map("password_hash")
+  employmentType EmploymentType @default(CLT) @map("employment_type")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz()
+
+  // relations
+  categories            Category[]
+  paymentMethods        PaymentMethod[]
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+  incomeEntries         IncomeEntry[]
+  monthlyBudgets        MonthlyBudget[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Categories
+// ---------------------------------------------------------------------------
+
+model Category {
+  id        String          @id @default(uuid())
+  userId    String?         @map("user_id")
+  name      String          @db.VarChar(100)
+  type      TransactionType
+  isSystem  Boolean         @default(false) @map("is_system")
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  deletedAt DateTime?       @map("deleted_at") @db.Timestamptz()
+
+  // relations
+  user                  User?                  @relation(fields: [userId], references: [id])
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+
+  @@index([userId])
+  @@map("categories")
+}
+
+// ---------------------------------------------------------------------------
+// Payment Methods & Credit Cards
+// ---------------------------------------------------------------------------
+
+model PaymentMethod {
+  id        String            @id @default(uuid())
+  userId    String            @map("user_id")
+  name      String            @db.VarChar(100)
+  type      PaymentMethodType
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt DateTime?         @map("deleted_at") @db.Timestamptz()
+
+  // relations
+  user                  User                   @relation(fields: [userId], references: [id])
+  creditCard            CreditCard?
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+  installmentPlans      InstallmentPlan[]
+
+  @@index([userId])
+  @@map("payment_methods")
+}
+
+model CreditCard {
+  id              String   @id @default(uuid())
+  paymentMethodId String   @unique @map("payment_method_id")
+  closingDay      Int      @map("closing_day")
+  dueDay          Int      @map("due_day")
+  creditLimitCents BigInt? @map("credit_limit_cents")
+
+  // relations
+  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  @@map("credit_cards")
+}
+
+// ---------------------------------------------------------------------------
+// Transactions
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id                     String            @id @default(uuid())
+  userId                 String            @map("user_id")
+  categoryId             String?           @map("category_id")
+  paymentMethodId        String?           @map("payment_method_id")
+  installmentPlanId      String?           @map("installment_plan_id")
+  recurringTransactionId String?           @map("recurring_transaction_id")
+  incomeEntryId          String?           @map("income_entry_id")
+  description            String            @db.VarChar(255)
+  amountCents            BigInt            @map("amount_cents")
+  type                   TransactionType
+  origin                 TransactionOrigin
+  referenceMonth         String            @map("reference_month") @db.Char(7)
+  transactionDate        DateTime          @map("transaction_date") @db.Date
+  notes                  String?           @db.Text
+  createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt              DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt              DateTime?         @map("deleted_at") @db.Timestamptz()
+
+  // relations
+  user                 User                  @relation(fields: [userId], references: [id])
+  category             Category?             @relation(fields: [categoryId], references: [id])
+  paymentMethod        PaymentMethod?         @relation(fields: [paymentMethodId], references: [id])
+  installmentPlan      InstallmentPlan?      @relation(fields: [installmentPlanId], references: [id])
+  recurringTransaction RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id])
+  incomeEntry          IncomeEntry?          @relation(fields: [incomeEntryId], references: [id])
+
+  @@unique([recurringTransactionId, referenceMonth], name: "uq_recurring_refmonth")
+  @@index([userId, referenceMonth], name: "idx_txn_user_refmonth")
+  @@index([userId, type])
+  @@index([installmentPlanId])
+  @@map("transactions")
+}
+
+// ---------------------------------------------------------------------------
+// Installment Plans
+// ---------------------------------------------------------------------------
+
+model InstallmentPlan {
+  id                String            @id @default(uuid())
+  userId            String            @map("user_id")
+  paymentMethodId   String            @map("payment_method_id")
+  categoryId        String?           @map("category_id")
+  description       String            @db.VarChar(255)
+  totalAmountCents  BigInt            @map("total_amount_cents")
+  installmentCount  Int               @map("installment_count")
+  firstReferenceMonth String          @map("first_reference_month") @db.Char(7)
+  status            InstallmentStatus @default(ACTIVE)
+  purchaseDate      DateTime          @map("purchase_date") @db.Date
+  notes             String?           @db.Text
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt         DateTime?         @map("deleted_at") @db.Timestamptz()
+
+  // relations
+  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  transactions  Transaction[]
+
+  @@index([userId])
+  @@index([paymentMethodId])
+  @@map("installment_plans")
+}
+
+// ---------------------------------------------------------------------------
+// Recurring Transactions
+// ---------------------------------------------------------------------------
+
+model RecurringTransaction {
+  id              String          @id @default(uuid())
+  userId          String          @map("user_id")
+  categoryId      String?         @map("category_id")
+  paymentMethodId String?         @map("payment_method_id")
+  description     String          @db.VarChar(255)
+  amountCents     BigInt          @map("amount_cents")
+  type            TransactionType
+  dayOfMonth      Int?            @map("day_of_month")
+  startMonth      String          @map("start_month") @db.Char(7)
+  endMonth        String?         @map("end_month") @db.Char(7)
+  isActive        Boolean         @default(true) @map("is_active")
+  notes           String?         @db.Text
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt       DateTime?       @map("deleted_at") @db.Timestamptz()
+
+  // relations
+  user          User          @relation(fields: [userId], references: [id])
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  transactions  Transaction[]
+
+  @@index([userId, isActive])
+  @@map("recurring_transactions")
+}
+
+// ---------------------------------------------------------------------------
+// Income
+// ---------------------------------------------------------------------------
+
+model IncomeEntry {
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+  referenceMonth String         @map("reference_month") @db.Char(7)
+  grossCents     BigInt         @map("gross_cents")
+  netCents       BigInt         @map("net_cents")
+  employmentType EmploymentType @map("employment_type")
+  description    String         @default("Salário") @db.VarChar(255)
+  notes          String?        @db.Text
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz()
+
+  // relations
+  user       User              @relation(fields: [userId], references: [id])
+  deductions IncomeDeduction[]
+  transactions Transaction[]
+
+  @@unique([userId, referenceMonth])
+  @@index([userId, referenceMonth])
+  @@map("income_entries")
+}
+
+model IncomeDeduction {
+  id             String   @id @default(uuid())
+  incomeEntryId  String   @map("income_entry_id")
+  description    String   @db.VarChar(100)
+  amountCents    BigInt   @map("amount_cents")
+  isAutomatic    Boolean  @default(false) @map("is_automatic")
+  deductionType  String?  @map("deduction_type") @db.VarChar(50)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // relations
+  incomeEntry IncomeEntry @relation(fields: [incomeEntryId], references: [id], onDelete: Cascade)
+
+  @@index([incomeEntryId])
+  @@map("income_deductions")
+}
+
+// ---------------------------------------------------------------------------
+// Deduction Tables (INSS / IRRF tax brackets)
+// ---------------------------------------------------------------------------
+
+model DeductionTable {
+  id          String             @id @default(uuid())
+  type        DeductionTableType
+  validForYear Int               @map("valid_for_year")
+  brackets    Json
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@unique([type, validForYear])
+  @@map("deduction_tables")
+}
+
+// ---------------------------------------------------------------------------
+// Monthly Budgets (schema-ready, no API endpoints in MVP)
+// ---------------------------------------------------------------------------
+
+model MonthlyBudget {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  referenceMonth String    @map("reference_month") @db.Char(7)
+  totalBudgetCents BigInt  @map("total_budget_cents")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // relations
+  user        User                @relation(fields: [userId], references: [id])
+  allocations BudgetAllocation[]
+
+  @@unique([userId, referenceMonth])
+  @@map("monthly_budgets")
+}
+
+model BudgetAllocation {
+  id              String  @id @default(uuid())
+  monthlyBudgetId String  @map("monthly_budget_id")
+  categoryId      String? @map("category_id")
+  label           String  @db.VarChar(100)
+  allocatedCents  BigInt  @map("allocated_cents")
+
+  // relations
+  monthlyBudget MonthlyBudget @relation(fields: [monthlyBudgetId], references: [id], onDelete: Cascade)
+
+  @@map("budget_allocations")
+}
