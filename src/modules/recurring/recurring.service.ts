@@ -127,6 +127,13 @@ export class RecurringService {
     return this.recurringRepository.findAllByUser(userId, filters);
   }
 
+  async findActiveForMonth(
+    userId: string,
+    month: string,
+  ): Promise<RecurringTransaction[]> {
+    return this.recurringRepository.findActiveForMonth(userId, month);
+  }
+
   async findById(id: string, userId: string): Promise<RecurringTransaction> {
     const template = await this.recurringRepository.findById(id, userId);
     if (!template) throw new EntityNotFoundException('RecurringTransaction', id);

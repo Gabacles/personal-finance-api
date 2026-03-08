@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaymentMethodType } from '@prisma/client';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import {
   AuthenticatedUser,
   CurrentUser,
@@ -23,6 +23,12 @@ class PaymentMethodsFilterDto {
   @IsOptional()
   @IsEnum(PaymentMethodType)
   type?: PaymentMethodType;
+}
+
+class StatementQueryDto {
+  @IsString()
+  @Matches(/^\d{4}-\d{2}$/, { message: 'month must be in YYYY-MM format' })
+  month!: string;
 }
 
 @ApiTags('Payment Methods')
@@ -60,5 +66,17 @@ export class PaymentMethodsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.paymentMethodsService.findById(id, user.id);
+  }
+
+  @Get(':id/statement')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all transactions for a payment method in a given month' })
+  @ApiQuery({ name: 'month', example: '2026-03', description: 'Reference month in YYYY-MM format' })
+  getStatement(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: StatementQueryDto,
+  ) {
+    return this.paymentMethodsService.getStatement(id, user.id, query.month);
   }
 }
