@@ -59,6 +59,13 @@ let TransactionsRepository = class TransactionsRepository {
             include: RELATIONS,
         });
     }
+    async update(id, data) {
+        return this.prisma.transaction.update({
+            where: { id },
+            data,
+            include: RELATIONS,
+        });
+    }
     async softDelete(id) {
         await this.prisma.transaction.update({
             where: { id },

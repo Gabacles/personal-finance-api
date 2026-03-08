@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TransactionOrigin, TransactionType } from '@prisma/client';
+import { PaymentMethodType, TransactionOrigin, TransactionType } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { EntityNotFoundException } from '../../shared/exceptions/domain.exceptions';
+import { PrismaService } from '../../shared/database/prisma.service';
+import {
+  BusinessRuleException,
+  EntityNotFoundException,
+} from '../../shared/exceptions/domain.exceptions';
 import { TransactionsRepository } from './transactions.repository';
 import { TransactionsService } from './transactions.service';
 
@@ -34,8 +38,14 @@ const mockRepo = {
   findByFilters: jest.fn(),
   findById: jest.fn(),
   softDelete: jest.fn(),
+  update: jest.fn(),
   findByRecurringAndMonth: jest.fn(),
   findFutureInstallments: jest.fn(),
+};
+
+const mockPrisma = {
+  paymentMethod: { findFirst: jest.fn() },
+  category: { findFirst: jest.fn() },
 };
 
 describe('TransactionsService', () => {
@@ -46,6 +56,7 @@ describe('TransactionsService', () => {
       providers: [
         TransactionsService,
         { provide: TransactionsRepository, useValue: mockRepo },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
@@ -216,6 +227,132 @@ describe('TransactionsService', () => {
       await expect(
         service.findById('txn-uuid', 'user-uuid'),
       ).rejects.toThrow(EntityNotFoundException);
+    });
+  });
+
+  describe('createDirectExpense', () => {
+    it('creates a ONE_TIME expense with a non-card payment method', async () => {
+      mockPrisma.paymentMethod.findFirst.mockResolvedValue({ type: PaymentMethodType.DEBIT_CARD });
+      mockPrisma.category.findFirst.mockResolvedValue({ id: 'cat-uuid' });
+      mockRepo.create.mockResolvedValue(baseTransaction);
+
+      const result = await service.createDirectExpense('user-uuid', {
+        description: 'Groceries',
+        amountCents: 5000,
+        transactionDate: '2026-03-07',
+        categoryId: 'cat-uuid',
+        paymentMethodId: 'pm-uuid',
+      });
+
+      expect(result.origin).toBe(TransactionOrigin.ONE_TIME);
+    });
+
+    it('throws BusinessRuleException when payment method is a credit card', async () => {
+      mockPrisma.paymentMethod.findFirst.mockResolvedValue({ type: PaymentMethodType.CREDIT_CARD });
+
+      await expect(
+        service.createDirectExpense('user-uuid', {
+          description: 'Test',
+          amountCents: 1000,
+          transactionDate: '2026-03-07',
+          paymentMethodId: 'cc-uuid',
+        }),
+      ).rejects.toThrow(BusinessRuleException);
+    });
+
+    it('throws EntityNotFoundException when payment method not found', async () => {
+      mockPrisma.paymentMethod.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.createDirectExpense('user-uuid', {
+          description: 'Test',
+          amountCents: 1000,
+          transactionDate: '2026-03-07',
+          paymentMethodId: 'missing-pm',
+        }),
+      ).rejects.toThrow(EntityNotFoundException);
+    });
+
+    it('throws EntityNotFoundException when category not found', async () => {
+      mockPrisma.paymentMethod.findFirst.mockResolvedValue(null);
+      mockPrisma.category.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.createDirectExpense('user-uuid', {
+          description: 'Test',
+          amountCents: 1000,
+          transactionDate: '2026-03-07',
+          categoryId: 'bad-cat',
+        }),
+      ).rejects.toThrow(EntityNotFoundException);
+    });
+  });
+
+  describe('update', () => {
+    it('updates a ONE_TIME transaction successfully', async () => {
+      const updated = { ...baseTransaction, description: 'Updated', amountCents: BigInt(9999) };
+      mockRepo.findById.mockResolvedValue(baseTransaction);
+      mockRepo.update.mockResolvedValue(updated);
+
+      const result = await service.update('txn-uuid', 'user-uuid', {
+        description: 'Updated',
+        amountCents: 9999,
+      });
+
+      expect(result.description).toBe('Updated');
+      expect(mockRepo.update).toHaveBeenCalledWith(
+        'txn-uuid',
+        expect.objectContaining({ description: 'Updated', amountCents: BigInt(9999) }),
+      );
+    });
+
+    it('throws BusinessRuleException when updating a non-ONE_TIME transaction', async () => {
+      mockRepo.findById.mockResolvedValue({
+        ...baseTransaction,
+        origin: TransactionOrigin.INSTALLMENT,
+      });
+
+      await expect(
+        service.update('txn-uuid', 'user-uuid', { description: 'Nope' }),
+      ).rejects.toThrow(BusinessRuleException);
+    });
+
+    it('throws EntityNotFoundException when transaction not found', async () => {
+      mockRepo.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update('txn-uuid', 'user-uuid', { description: 'Nope' }),
+      ).rejects.toThrow(EntityNotFoundException);
+    });
+  });
+
+  describe('remove', () => {
+    it('soft-deletes a ONE_TIME transaction', async () => {
+      mockRepo.findById.mockResolvedValue(baseTransaction);
+      mockRepo.softDelete.mockResolvedValue(undefined);
+
+      await service.remove('txn-uuid', 'user-uuid');
+
+      expect(mockRepo.softDelete).toHaveBeenCalledWith('txn-uuid');
+    });
+
+    it('throws BusinessRuleException when deleting a non-ONE_TIME transaction', async () => {
+      mockRepo.findById.mockResolvedValue({
+        ...baseTransaction,
+        origin: TransactionOrigin.RECURRING,
+      });
+
+      await expect(service.remove('txn-uuid', 'user-uuid')).rejects.toThrow(
+        BusinessRuleException,
+      );
+    });
+
+    it('throws EntityNotFoundException when transaction not found', async () => {
+      mockRepo.findById.mockResolvedValue(null);
+
+      await expect(service.remove('txn-uuid', 'user-uuid')).rejects.toThrow(
+        EntityNotFoundException,
+      );
     });
   });
 });

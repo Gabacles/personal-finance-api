@@ -12,4 +12,13 @@ export declare class PaymentMethodsRepository {
     findAllByUser(userId: string, type?: PaymentMethodType): Promise<PaymentMethodWithCard[]>;
     findById(id: string, userId: string): Promise<PaymentMethodWithCard | null>;
     findByIdAny(id: string): Promise<PaymentMethod | null>;
+    update(id: string, data: {
+        name?: string;
+        creditCard?: {
+            closingDay?: number;
+            dueDay?: number;
+            creditLimitCents?: number | null;
+        };
+    }): Promise<PaymentMethodWithCard>;
+    softDelete(id: string): Promise<void>;
 }

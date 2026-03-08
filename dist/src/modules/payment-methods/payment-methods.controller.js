@@ -19,6 +19,7 @@ const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 const current_user_decorator_1 = require("../../shared/decorators/current-user.decorator");
 const create_payment_method_dto_1 = require("./dto/create-payment-method.dto");
+const update_payment_method_dto_1 = require("./dto/update-payment-method.dto");
 const payment_methods_service_1 = require("./payment-methods.service");
 class PaymentMethodsFilterDto {
 }
@@ -27,6 +28,13 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.PaymentMethodType),
     __metadata("design:type", String)
 ], PaymentMethodsFilterDto.prototype, "type", void 0);
+class StatementQueryDto {
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^\d{4}-\d{2}$/, { message: 'month must be in YYYY-MM format' }),
+    __metadata("design:type", String)
+], StatementQueryDto.prototype, "month", void 0);
 let PaymentMethodsController = class PaymentMethodsController {
     constructor(paymentMethodsService) {
         this.paymentMethodsService = paymentMethodsService;
@@ -39,6 +47,15 @@ let PaymentMethodsController = class PaymentMethodsController {
     }
     findOne(user, id) {
         return this.paymentMethodsService.findById(id, user.id);
+    }
+    update(user, id, dto) {
+        return this.paymentMethodsService.update(id, user.id, dto);
+    }
+    async remove(user, id) {
+        await this.paymentMethodsService.remove(id, user.id);
+    }
+    getStatement(user, id, query) {
+        return this.paymentMethodsService.getStatement(id, user.id, query.month);
     }
 };
 exports.PaymentMethodsController = PaymentMethodsController;
@@ -73,6 +90,39 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], PaymentMethodsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Update payment method name or credit card details' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, update_payment_method_dto_1.UpdatePaymentMethodDto]),
+    __metadata("design:returntype", void 0)
+], PaymentMethodsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, swagger_1.ApiOperation)({ summary: 'Soft-delete a payment method (blocked if it has upcoming installments)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], PaymentMethodsController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Get)(':id/statement'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all transactions for a payment method in a given month' }),
+    (0, swagger_1.ApiQuery)({ name: 'month', example: '2026-03', description: 'Reference month in YYYY-MM format' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, StatementQueryDto]),
+    __metadata("design:returntype", void 0)
+], PaymentMethodsController.prototype, "getStatement", null);
 exports.PaymentMethodsController = PaymentMethodsController = __decorate([
     (0, swagger_1.ApiTags)('Payment Methods'),
     (0, swagger_1.ApiBearerAuth)('jwt'),

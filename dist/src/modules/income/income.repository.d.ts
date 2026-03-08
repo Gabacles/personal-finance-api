@@ -13,4 +13,5 @@ export declare class IncomeRepository {
     findByMonth(userId: string, referenceMonth: string): Promise<IncomeEntryWithDeductions | null>;
     findById(id: string, userId: string): Promise<IncomeEntryWithDeductions | null>;
     update(id: string, data: Prisma.IncomeEntryUncheckedUpdateInput, tx?: Prisma.TransactionClient): Promise<IncomeEntry>;
+    softDelete(id: string, tx?: Prisma.TransactionClient): Promise<void>;
 }

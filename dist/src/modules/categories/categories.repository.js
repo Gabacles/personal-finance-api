@@ -19,6 +19,11 @@ let CategoriesRepository = class CategoriesRepository {
     async createMany(data) {
         await this.prisma.category.createMany({ data });
     }
+    async createUserCategory(data) {
+        return this.prisma.category.create({
+            data: { ...data, isSystem: false },
+        });
+    }
     async findAllForUser(userId, type) {
         return this.prisma.category.findMany({
             where: {
@@ -33,6 +38,22 @@ let CategoriesRepository = class CategoriesRepository {
         return this.prisma.category.findFirst({
             where: { id, deletedAt: null },
         });
+    }
+    async updateName(id, name) {
+        return this.prisma.category.update({ where: { id }, data: { name } });
+    }
+    async softDelete(id) {
+        await this.prisma.category.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+        });
+    }
+    async countUsage(id) {
+        const [txns, recurring] = await Promise.all([
+            this.prisma.transaction.count({ where: { categoryId: id, deletedAt: null } }),
+            this.prisma.recurringTransaction.count({ where: { categoryId: id, deletedAt: null } }),
+        ]);
+        return txns + recurring;
     }
 };
 exports.CategoriesRepository = CategoriesRepository;

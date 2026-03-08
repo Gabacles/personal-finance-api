@@ -256,6 +256,20 @@ export class IncomeService {
     if (!entry) throw new EntityNotFoundException('IncomeEntry', id);
     return entry;
   }
+
+  async remove(id: string, userId: string): Promise<void> {
+    const entry = await this.incomeRepository.findById(id, userId);
+    if (!entry) throw new EntityNotFoundException('IncomeEntry', id);
+
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await this.incomeRepository.softDelete(id, tx);
+      // soft-delete the linked income transaction
+      await tx.transaction.updateMany({
+        where: { incomeEntryId: id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------

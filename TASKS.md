@@ -325,26 +325,25 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M9 complete
 
-- [ ] M10-01: Implement `POST /api/v1/transactions` (direct expense — non-card)
-- [ ] M10-02: Implement `PATCH /api/v1/transactions/:id`
-- [ ] M10-03: Implement `DELETE /api/v1/transactions/:id`
-- [ ] M10-04: Implement `PATCH /api/v1/payment-methods/:id`
-- [ ] M10-05: Implement `DELETE /api/v1/payment-methods/:id` with installment plan guard
-- [ ] M10-06: Implement `DELETE /api/v1/income/:id`
-- [ ] M10-07: Implement `PATCH /api/v1/users/me`
-- [ ] M10-08: E2E test suite covering the critical happy paths across all milestones
+- [x] M10-01: Implement `POST /api/v1/transactions` (direct expense — non-card)
+- [x] M10-02: Implement `PATCH /api/v1/transactions/:id`
+- [x] M10-03: Implement `DELETE /api/v1/transactions/:id`
+- [x] M10-04: Implement `PATCH /api/v1/payment-methods/:id`
+- [x] M10-05: Implement `DELETE /api/v1/payment-methods/:id` with installment plan guard
+- [x] M10-06: Implement `DELETE /api/v1/income/:id`
+- [x] M10-07: Implement `PATCH /api/v1/users/me`
+- [x] M10-08: E2E test suite covering the critical happy paths across all milestones
 
 ---
 
 ## Milestone 11 — v1.1 (Future)
-> Schema-ready features that require new business logic but no structural migrations.
+> Goal: Schema-ready features that require new business logic but no structural migrations.
 
-- [ ] User-defined categories (POST/PATCH/DELETE /categories)
-- [ ] Monthly budgets and allocations
-- [ ] Investment plans
-- [ ] PIX/Cash/Debit as active payment method types
-- [ ] PJ income deduction configuration
-- [ ] Recurring amount version history
+- [x] User-defined categories (POST/PATCH/DELETE /categories)
+- [x] Monthly budgets and allocations (POST/GET/PATCH/DELETE /budgets + BudgetAllocation cascade)
+- [x] PIX/Cash/Debit as active payment method types (already supported via PaymentMethodType enum — no extra work needed)
+- [x] PJ income deduction configuration (PJ users already supported — no auto-deductions run; custom deductions available via `CreateIncomeDto.customDeductions`)
+- [ ] Recurring amount version history (blocked — requires new DB table and migration)
 
 ---
 

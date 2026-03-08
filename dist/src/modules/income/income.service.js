@@ -184,6 +184,18 @@ let IncomeService = class IncomeService {
             throw new domain_exceptions_1.EntityNotFoundException('IncomeEntry', id);
         return entry;
     }
+    async remove(id, userId) {
+        const entry = await this.incomeRepository.findById(id, userId);
+        if (!entry)
+            throw new domain_exceptions_1.EntityNotFoundException('IncomeEntry', id);
+        await this.prisma.$transaction(async (tx) => {
+            await this.incomeRepository.softDelete(id, tx);
+            await tx.transaction.updateMany({
+                where: { incomeEntryId: id, deletedAt: null },
+                data: { deletedAt: new Date() },
+            });
+        });
+    }
 };
 exports.IncomeService = IncomeService;
 exports.IncomeService = IncomeService = __decorate([

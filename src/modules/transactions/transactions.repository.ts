@@ -98,6 +98,17 @@ export class TransactionsRepository {
     });
   }
 
+  async update(
+    id: string,
+    data: Prisma.TransactionUncheckedUpdateInput,
+  ): Promise<TransactionWithRelations> {
+    return this.prisma.transaction.update({
+      where: { id },
+      data,
+      include: RELATIONS,
+    });
+  }
+
   async softDelete(id: string): Promise<void> {
     await this.prisma.transaction.update({
       where: { id },

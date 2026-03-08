@@ -40,6 +40,36 @@ let PaymentMethodsRepository = class PaymentMethodsRepository {
             where: { id, deletedAt: null },
         });
     }
+    async update(id, data) {
+        return this.prisma.paymentMethod.update({
+            where: { id },
+            data: {
+                ...(data.name !== undefined && { name: data.name }),
+                ...(data.creditCard !== undefined && {
+                    creditCard: {
+                        update: {
+                            ...(data.creditCard.closingDay !== undefined && {
+                                closingDay: data.creditCard.closingDay,
+                            }),
+                            ...(data.creditCard.dueDay !== undefined && {
+                                dueDay: data.creditCard.dueDay,
+                            }),
+                            ...(data.creditCard.creditLimitCents !== undefined && {
+                                creditLimitCents: data.creditCard.creditLimitCents,
+                            }),
+                        },
+                    },
+                }),
+            },
+            include: { creditCard: true },
+        });
+    }
+    async softDelete(id) {
+        await this.prisma.paymentMethod.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+        });
+    }
 };
 exports.PaymentMethodsRepository = PaymentMethodsRepository;
 exports.PaymentMethodsRepository = PaymentMethodsRepository = __decorate([

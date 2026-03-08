@@ -43,6 +43,13 @@ let IncomeRepository = class IncomeRepository {
         const client = tx ?? this.prisma;
         return client.incomeEntry.update({ where: { id }, data });
     }
+    async softDelete(id, tx) {
+        const client = tx ?? this.prisma;
+        await client.incomeEntry.update({
+            where: { id },
+            data: { deletedAt: new Date() },
+        });
+    }
 };
 exports.IncomeRepository = IncomeRepository;
 exports.IncomeRepository = IncomeRepository = __decorate([
