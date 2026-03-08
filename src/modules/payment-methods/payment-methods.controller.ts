@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -17,6 +19,7 @@ import {
   CurrentUser,
 } from '../../shared/decorators/current-user.decorator';
 import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
+import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
 import { PaymentMethodsService } from './payment-methods.service';
 
 class PaymentMethodsFilterDto {
@@ -66,6 +69,27 @@ export class PaymentMethodsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.paymentMethodsService.findById(id, user.id);
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update payment method name or credit card details' })
+  update(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePaymentMethodDto,
+  ) {
+    return this.paymentMethodsService.update(id, user.id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Soft-delete a payment method (blocked if it has upcoming installments)' })
+  async remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.paymentMethodsService.remove(id, user.id);
   }
 
   @Get(':id/statement')

@@ -45,4 +45,46 @@ export class PaymentMethodsRepository {
       where: { id, deletedAt: null },
     });
   }
+
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      creditCard?: {
+        closingDay?: number;
+        dueDay?: number;
+        creditLimitCents?: number | null;
+      };
+    },
+  ): Promise<PaymentMethodWithCard> {
+    return this.prisma.paymentMethod.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.creditCard !== undefined && {
+          creditCard: {
+            update: {
+              ...(data.creditCard.closingDay !== undefined && {
+                closingDay: data.creditCard.closingDay,
+              }),
+              ...(data.creditCard.dueDay !== undefined && {
+                dueDay: data.creditCard.dueDay,
+              }),
+              ...(data.creditCard.creditLimitCents !== undefined && {
+                creditLimitCents: data.creditCard.creditLimitCents,
+              }),
+            },
+          },
+        }),
+      },
+      include: { creditCard: true },
+    });
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.prisma.paymentMethod.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
 }

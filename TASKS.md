@@ -325,14 +325,14 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M9 complete
 
-- [ ] M10-01: Implement `POST /api/v1/transactions` (direct expense — non-card)
-- [ ] M10-02: Implement `PATCH /api/v1/transactions/:id`
-- [ ] M10-03: Implement `DELETE /api/v1/transactions/:id`
-- [ ] M10-04: Implement `PATCH /api/v1/payment-methods/:id`
-- [ ] M10-05: Implement `DELETE /api/v1/payment-methods/:id` with installment plan guard
-- [ ] M10-06: Implement `DELETE /api/v1/income/:id`
-- [ ] M10-07: Implement `PATCH /api/v1/users/me`
-- [ ] M10-08: E2E test suite covering the critical happy paths across all milestones
+- [x] M10-01: Implement `POST /api/v1/transactions` (direct expense — non-card)
+- [x] M10-02: Implement `PATCH /api/v1/transactions/:id`
+- [x] M10-03: Implement `DELETE /api/v1/transactions/:id`
+- [x] M10-04: Implement `PATCH /api/v1/payment-methods/:id`
+- [x] M10-05: Implement `DELETE /api/v1/payment-methods/:id` with installment plan guard
+- [x] M10-06: Implement `DELETE /api/v1/income/:id`
+- [x] M10-07: Implement `PATCH /api/v1/users/me`
+- [x] M10-08: E2E test suite covering the critical happy paths across all milestones
 
 ---
 

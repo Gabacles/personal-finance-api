@@ -54,4 +54,15 @@ export class IncomeRepository {
     const client = tx ?? this.prisma;
     return client.incomeEntry.update({ where: { id }, data });
   }
+
+  async softDelete(
+    id: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const client = tx ?? this.prisma;
+    await client.incomeEntry.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
 }

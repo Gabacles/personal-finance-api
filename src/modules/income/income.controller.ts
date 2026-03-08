@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -85,5 +86,16 @@ export class IncomeController {
     @Body() dto: UpdateIncomeDto,
   ) {
     return this.incomeService.update(id, user.id, dto);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth('jwt')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Soft-delete an income entry and its linked transaction' })
+  async remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.incomeService.remove(id, user.id);
   }
 }
