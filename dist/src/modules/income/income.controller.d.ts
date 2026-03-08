@@ -101,4 +101,5 @@ export declare class IncomeController {
         grossCents: bigint;
         netCents: bigint;
     }>;
+    remove(user: AuthenticatedUser, id: string): Promise<void>;
 }

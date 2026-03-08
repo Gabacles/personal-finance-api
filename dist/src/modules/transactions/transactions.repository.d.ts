@@ -27,6 +27,7 @@ export declare class TransactionsRepository {
     createMany(data: Prisma.TransactionUncheckedCreateInput[], tx: PrismaTransactionClient): Promise<Transaction[]>;
     findByFilters(userId: string, filters: TransactionFilters, pagination: PaginationDto): Promise<PaginatedResponse<TransactionWithRelations>>;
     findById(id: string, userId: string): Promise<TransactionWithRelations | null>;
+    update(id: string, data: Prisma.TransactionUncheckedUpdateInput): Promise<TransactionWithRelations>;
     softDelete(id: string): Promise<void>;
     findByRecurringAndMonth(recurringId: string, month: string): Promise<Transaction | null>;
     findFutureInstallments(planId: string, currentMonth: string): Promise<Transaction[]>;

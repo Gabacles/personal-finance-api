@@ -4,6 +4,14 @@ export declare class CategoriesRepository {
     private readonly prisma;
     constructor(prisma: PrismaService);
     createMany(data: Prisma.CategoryCreateManyInput[]): Promise<void>;
+    createUserCategory(data: {
+        userId: string;
+        name: string;
+        type: TransactionType;
+    }): Promise<Category>;
     findAllForUser(userId: string, type?: TransactionType): Promise<Category[]>;
     findById(id: string): Promise<Category | null>;
+    updateName(id: string, name: string): Promise<Category>;
+    softDelete(id: string): Promise<void>;
+    countUsage(id: string): Promise<number>;
 }

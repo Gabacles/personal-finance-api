@@ -22,6 +22,8 @@ const payment_methods_module_1 = require("./modules/payment-methods/payment-meth
 const purchases_module_1 = require("./modules/purchases/purchases.module");
 const recurring_module_1 = require("./modules/recurring/recurring.module");
 const income_module_1 = require("./modules/income/income.module");
+const reporting_module_1 = require("./modules/reporting/reporting.module");
+const budget_module_1 = require("./modules/budget/budget.module");
 const transactions_module_1 = require("./modules/transactions/transactions.module");
 const users_module_1 = require("./modules/users/users.module");
 let AppModule = class AppModule {
@@ -46,6 +48,8 @@ exports.AppModule = AppModule = __decorate([
             installments_module_1.InstallmentsModule,
             recurring_module_1.RecurringModule,
             income_module_1.IncomeModule,
+            reporting_module_1.ReportingModule,
+            budget_module_1.BudgetModule,
         ],
         providers: [
             {

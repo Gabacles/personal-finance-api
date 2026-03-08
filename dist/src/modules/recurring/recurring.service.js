@@ -92,6 +92,9 @@ let RecurringService = class RecurringService {
     async findAll(userId, filters = {}) {
         return this.recurringRepository.findAllByUser(userId, filters);
     }
+    async findActiveForMonth(userId, month) {
+        return this.recurringRepository.findActiveForMonth(userId, month);
+    }
     async findById(id, userId) {
         const template = await this.recurringRepository.findById(id, userId);
         if (!template)

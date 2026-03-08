@@ -36,10 +36,10 @@ export declare class PurchasesController {
             createdAt: Date;
             userId: string;
             deletedAt: Date | null;
+            categoryId: string | null;
             description: string;
             updatedAt: Date;
             notes: string | null;
-            categoryId: string | null;
             paymentMethodId: string;
             totalAmountCents: bigint;
             installmentCount: number;
@@ -53,6 +53,7 @@ export declare class PurchasesController {
         createdAt: Date;
         userId: string;
         deletedAt: Date | null;
+        categoryId: string | null;
         description: string;
         updatedAt: Date;
         amountCents: bigint;
@@ -60,7 +61,6 @@ export declare class PurchasesController {
         referenceMonth: string;
         transactionDate: Date;
         notes: string | null;
-        categoryId: string | null;
         paymentMethodId: string | null;
         installmentPlanId: string | null;
         recurringTransactionId: string | null;

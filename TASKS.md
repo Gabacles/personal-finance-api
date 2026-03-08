@@ -337,14 +337,13 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 ---
 
 ## Milestone 11 — v1.1 (Future)
-> Schema-ready features that require new business logic but no structural migrations.
+> Goal: Schema-ready features that require new business logic but no structural migrations.
 
-- [ ] User-defined categories (POST/PATCH/DELETE /categories)
-- [ ] Monthly budgets and allocations
-- [ ] Investment plans
-- [ ] PIX/Cash/Debit as active payment method types
-- [ ] PJ income deduction configuration
-- [ ] Recurring amount version history
+- [x] User-defined categories (POST/PATCH/DELETE /categories)
+- [x] Monthly budgets and allocations (POST/GET/PATCH/DELETE /budgets + BudgetAllocation cascade)
+- [x] PIX/Cash/Debit as active payment method types (already supported via PaymentMethodType enum — no extra work needed)
+- [x] PJ income deduction configuration (PJ users already supported — no auto-deductions run; custom deductions available via `CreateIncomeDto.customDeductions`)
+- [ ] Recurring amount version history (blocked — requires new DB table and migration)
 
 ---
 

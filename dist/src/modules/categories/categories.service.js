@@ -44,6 +44,39 @@ let CategoriesService = class CategoriesService {
     async findAll(userId, type) {
         return this.categoriesRepository.findAllForUser(userId, type);
     }
+    async create(userId, dto) {
+        return this.categoriesRepository.createUserCategory({
+            userId,
+            name: dto.name,
+            type: dto.type,
+        });
+    }
+    async update(id, userId, dto) {
+        const cat = await this.categoriesRepository.findById(id);
+        if (!cat)
+            throw new domain_exceptions_1.EntityNotFoundException('Category', id);
+        if (cat.isSystem) {
+            throw new domain_exceptions_1.BusinessRuleException('SYSTEM_CATEGORY_NOT_EDITABLE', 'System categories cannot be modified');
+        }
+        if (cat.userId !== userId)
+            throw new domain_exceptions_1.EntityNotFoundException('Category', id);
+        return this.categoriesRepository.updateName(id, dto.name);
+    }
+    async remove(id, userId) {
+        const cat = await this.categoriesRepository.findById(id);
+        if (!cat)
+            throw new domain_exceptions_1.EntityNotFoundException('Category', id);
+        if (cat.isSystem) {
+            throw new domain_exceptions_1.BusinessRuleException('SYSTEM_CATEGORY_NOT_DELETABLE', 'System categories cannot be deleted');
+        }
+        if (cat.userId !== userId)
+            throw new domain_exceptions_1.EntityNotFoundException('Category', id);
+        const usageCount = await this.categoriesRepository.countUsage(id);
+        if (usageCount > 0) {
+            throw new domain_exceptions_1.BusinessRuleException('CATEGORY_IN_USE', 'Cannot delete a category that is referenced by active transactions or recurring rules');
+        }
+        await this.categoriesRepository.softDelete(id);
+    }
     async validateOwnershipAndType(categoryId, userId, expectedType) {
         const category = await this.categoriesRepository.findById(categoryId);
         if (!category)

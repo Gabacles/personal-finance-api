@@ -16,11 +16,16 @@ exports.TransactionsController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const current_user_decorator_1 = require("../../shared/decorators/current-user.decorator");
+const create_transaction_dto_1 = require("./dto/create-transaction.dto");
 const query_transactions_dto_1 = require("./dto/query-transactions.dto");
+const update_transaction_dto_1 = require("./dto/update-transaction.dto");
 const transactions_service_1 = require("./transactions.service");
 let TransactionsController = class TransactionsController {
     constructor(transactionsService) {
         this.transactionsService = transactionsService;
+    }
+    create(user, dto) {
+        return this.transactionsService.createDirectExpense(user.id, dto);
     }
     findAll(user, query) {
         const pagination = { page: query.page, limit: query.limit };
@@ -36,8 +41,24 @@ let TransactionsController = class TransactionsController {
     findOne(user, id) {
         return this.transactionsService.findById(id, user.id);
     }
+    update(user, id, dto) {
+        return this.transactionsService.update(id, user.id, dto);
+    }
+    async remove(user, id) {
+        await this.transactionsService.remove(id, user.id);
+    }
 };
 exports.TransactionsController = TransactionsController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a direct one-time expense (non-credit-card)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_transaction_dto_1.CreateTransactionDto]),
+    __metadata("design:returntype", void 0)
+], TransactionsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
@@ -58,6 +79,27 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], TransactionsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a one-time transaction (description, amount, notes, category)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, update_transaction_dto_1.UpdateTransactionDto]),
+    __metadata("design:returntype", void 0)
+], TransactionsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, swagger_1.ApiOperation)({ summary: 'Soft-delete a one-time transaction' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], TransactionsController.prototype, "remove", null);
 exports.TransactionsController = TransactionsController = __decorate([
     (0, swagger_1.ApiTags)('Transactions'),
     (0, swagger_1.ApiBearerAuth)('jwt'),

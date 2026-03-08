@@ -14,6 +14,7 @@ import { PurchasesModule } from './modules/purchases/purchases.module';
 import { RecurringModule } from './modules/recurring/recurring.module';
 import { IncomeModule } from './modules/income/income.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
+import { BudgetModule } from './modules/budget/budget.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -36,6 +37,7 @@ import { UsersModule } from './modules/users/users.module';
     RecurringModule,
     IncomeModule,
     ReportingModule,
+    BudgetModule,
   ],
   providers: [
     {

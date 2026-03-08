@@ -19,6 +19,8 @@ const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 const current_user_decorator_1 = require("../../shared/decorators/current-user.decorator");
 const categories_service_1 = require("./categories.service");
+const create_category_dto_1 = require("./dto/create-category.dto");
+const update_category_dto_1 = require("./dto/update-category.dto");
 class CategoriesFilterDto {
 }
 __decorate([
@@ -30,11 +32,30 @@ let CategoriesController = class CategoriesController {
     constructor(categoriesService) {
         this.categoriesService = categoriesService;
     }
+    create(user, dto) {
+        return this.categoriesService.create(user.id, dto);
+    }
     findAll(user, query) {
         return this.categoriesService.findAll(user.id, query.type);
     }
+    update(user, id, dto) {
+        return this.categoriesService.update(id, user.id, dto);
+    }
+    async remove(user, id) {
+        await this.categoriesService.remove(id, user.id);
+    }
 };
 exports.CategoriesController = CategoriesController;
+__decorate([
+    (0, common_1.Post)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a user-defined category' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_category_dto_1.CreateCategoryDto]),
+    __metadata("design:returntype", void 0)
+], CategoriesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
@@ -46,6 +67,27 @@ __decorate([
     __metadata("design:paramtypes", [Object, CategoriesFilterDto]),
     __metadata("design:returntype", void 0)
 ], CategoriesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Rename a user-defined category (type is immutable)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, update_category_dto_1.UpdateCategoryDto]),
+    __metadata("design:returntype", void 0)
+], CategoriesController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, swagger_1.ApiOperation)({ summary: 'Soft-delete a user-defined category (blocked if in use)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CategoriesController.prototype, "remove", null);
 exports.CategoriesController = CategoriesController = __decorate([
     (0, swagger_1.ApiTags)('Categories'),
     (0, swagger_1.ApiBearerAuth)('jwt'),

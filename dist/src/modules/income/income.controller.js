@@ -43,6 +43,9 @@ let IncomeController = class IncomeController {
     update(user, id, dto) {
         return this.incomeService.update(id, user.id, dto);
     }
+    async remove(user, id) {
+        await this.incomeService.remove(id, user.id);
+    }
 };
 exports.IncomeController = IncomeController;
 __decorate([
@@ -101,6 +104,17 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, update_income_dto_1.UpdateIncomeDto]),
     __metadata("design:returntype", void 0)
 ], IncomeController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, swagger_1.ApiBearerAuth)('jwt'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    (0, swagger_1.ApiOperation)({ summary: 'Soft-delete an income entry and its linked transaction' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseUUIDPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], IncomeController.prototype, "remove", null);
 exports.IncomeController = IncomeController = __decorate([
     (0, swagger_1.ApiTags)('Income'),
     (0, common_1.Controller)('income'),

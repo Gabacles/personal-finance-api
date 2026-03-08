@@ -18,6 +18,7 @@ export declare class RecurringService {
     create(userId: string, dto: CreateRecurringDto): Promise<RecurringTransaction>;
     generateForMonth(userId: string, month: string): Promise<GenerateResult>;
     findAll(userId: string, filters?: RecurringFilters): Promise<RecurringTransaction[]>;
+    findActiveForMonth(userId: string, month: string): Promise<RecurringTransaction[]>;
     findById(id: string, userId: string): Promise<RecurringTransaction>;
     update(id: string, userId: string, dto: UpdateRecurringDto): Promise<RecurringTransaction>;
     activate(id: string, userId: string): Promise<RecurringTransaction>;

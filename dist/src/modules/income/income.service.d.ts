@@ -18,4 +18,5 @@ export declare class IncomeService {
     update(id: string, userId: string, dto: UpdateIncomeDto): Promise<IncomeEntryWithDeductions>;
     findAll(userId: string): Promise<IncomeEntryWithDeductions[]>;
     findById(id: string, userId: string): Promise<IncomeEntryWithDeductions>;
+    remove(id: string, userId: string): Promise<void>;
 }

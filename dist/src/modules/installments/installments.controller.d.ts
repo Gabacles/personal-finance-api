@@ -30,6 +30,7 @@ export declare class InstallmentsController {
             createdAt: Date;
             userId: string;
             deletedAt: Date | null;
+            categoryId: string | null;
             description: string;
             updatedAt: Date;
             amountCents: bigint;
@@ -37,7 +38,6 @@ export declare class InstallmentsController {
             referenceMonth: string;
             transactionDate: Date;
             notes: string | null;
-            categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;
@@ -48,10 +48,10 @@ export declare class InstallmentsController {
         createdAt: Date;
         userId: string;
         deletedAt: Date | null;
+        categoryId: string | null;
         description: string;
         updatedAt: Date;
         notes: string | null;
-        categoryId: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
@@ -85,6 +85,7 @@ export declare class InstallmentsController {
             createdAt: Date;
             userId: string;
             deletedAt: Date | null;
+            categoryId: string | null;
             description: string;
             updatedAt: Date;
             amountCents: bigint;
@@ -92,7 +93,6 @@ export declare class InstallmentsController {
             referenceMonth: string;
             transactionDate: Date;
             notes: string | null;
-            categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;
@@ -103,10 +103,10 @@ export declare class InstallmentsController {
         createdAt: Date;
         userId: string;
         deletedAt: Date | null;
+        categoryId: string | null;
         description: string;
         updatedAt: Date;
         notes: string | null;
-        categoryId: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
@@ -140,6 +140,7 @@ export declare class InstallmentsController {
             createdAt: Date;
             userId: string;
             deletedAt: Date | null;
+            categoryId: string | null;
             description: string;
             updatedAt: Date;
             amountCents: bigint;
@@ -147,7 +148,6 @@ export declare class InstallmentsController {
             referenceMonth: string;
             transactionDate: Date;
             notes: string | null;
-            categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;
@@ -158,10 +158,10 @@ export declare class InstallmentsController {
         createdAt: Date;
         userId: string;
         deletedAt: Date | null;
+        categoryId: string | null;
         description: string;
         updatedAt: Date;
         notes: string | null;
-        categoryId: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
