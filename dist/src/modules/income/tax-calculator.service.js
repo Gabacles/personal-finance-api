@@ -16,7 +16,7 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const domain_exceptions_1 = require("../../shared/exceptions/domain.exceptions");
 const prisma_service_1 = require("../../shared/database/prisma.service");
-const DEPENDENT_ALLOWANCE_CENTS = 18959n;
+const DEPENDENT_ALLOWANCE_CENTS = 24274n;
 let TaxCalculatorService = class TaxCalculatorService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -36,9 +36,10 @@ let TaxCalculatorService = class TaxCalculatorService {
             throw new domain_exceptions_1.EntityNotFoundException('DeductionTable', `IRRF/${year}`);
         const inssBrackets = inssRow.brackets;
         const irrfBrackets = irrfRow.brackets;
+        const irrfMeta = irrfRow.meta;
         const { inssCents, inssSlices } = calcInss(grossCents, inssBrackets);
         const dependentAllowanceTotalCents = BigInt(dependents) * DEPENDENT_ALLOWANCE_CENTS;
-        const { irrfCents, irrfDetail } = calcIrrf(grossCents, inssCents, dependentAllowanceTotalCents, irrfBrackets);
+        const { irrfCents, irrfDetail } = calcIrrf(grossCents, inssCents, dependentAllowanceTotalCents, irrfBrackets, irrfMeta ?? undefined);
         const netCents = grossCents - inssCents - irrfCents;
         return {
             grossCents,
@@ -77,7 +78,7 @@ function calcInss(grossCents, brackets) {
     }
     return { inssCents, inssSlices };
 }
-function calcIrrf(grossCents, inssCents, dependentAllowanceTotalCents, brackets) {
+function calcIrrf(grossCents, inssCents, dependentAllowanceTotalCents, brackets, meta) {
     const taxableBasisCents = grossCents - inssCents - dependentAllowanceTotalCents;
     if (taxableBasisCents <= 0n) {
         return {
@@ -86,6 +87,7 @@ function calcIrrf(grossCents, inssCents, dependentAllowanceTotalCents, brackets)
                 taxableBasisCents: 0n,
                 rateBps: 0,
                 deductionAppliedCents: 0n,
+                monthlyReductionCents: 0n,
                 totalCents: 0n,
             },
         };
@@ -98,6 +100,7 @@ function calcIrrf(grossCents, inssCents, dependentAllowanceTotalCents, brackets)
                 taxableBasisCents,
                 rateBps: 0,
                 deductionAppliedCents: 0n,
+                monthlyReductionCents: 0n,
                 totalCents: 0n,
             },
         };
@@ -105,14 +108,32 @@ function calcIrrf(grossCents, inssCents, dependentAllowanceTotalCents, brackets)
     const rateBps = BigInt(bracket.rateBps);
     const deductionApplied = BigInt(bracket.deductionCents);
     const grossIrrf = (taxableBasisCents * rateBps) / 10000n;
-    const irrfCents = grossIrrf > deductionApplied ? grossIrrf - deductionApplied : 0n;
+    let irrfBase = grossIrrf > deductionApplied ? grossIrrf - deductionApplied : 0n;
+    let monthlyReductionCents = 0n;
+    if (meta && irrfBase > 0n) {
+        const t1 = BigInt(meta.reductionThreshold1Cents);
+        const t2 = BigInt(meta.reductionThreshold2Cents);
+        if (taxableBasisCents <= t1) {
+            monthlyReductionCents = irrfBase;
+            irrfBase = 0n;
+        }
+        else if (taxableBasisCents <= t2) {
+            const fixedCents = BigInt(meta.reductionFixedCents);
+            const ratePer1M = BigInt(meta.reductionRatePer1M);
+            const variablePart = (ratePer1M * taxableBasisCents) / 1000000n;
+            const reductionAmount = fixedCents > variablePart ? fixedCents - variablePart : 0n;
+            monthlyReductionCents = reductionAmount < irrfBase ? reductionAmount : irrfBase;
+            irrfBase = irrfBase - monthlyReductionCents;
+        }
+    }
     return {
-        irrfCents,
+        irrfCents: irrfBase,
         irrfDetail: {
             taxableBasisCents,
             rateBps: bracket.rateBps,
             deductionAppliedCents: deductionApplied,
-            totalCents: irrfCents,
+            monthlyReductionCents,
+            totalCents: irrfBase,
         },
     };
 }

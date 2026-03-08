@@ -12,94 +12,94 @@ export declare class IncomeController {
     register(user: AuthenticatedUser, dto: CreateIncomeDto): Promise<{
         deductions: {
             id: string;
-            createdAt: Date;
             description: string;
-            amountCents: bigint;
+            createdAt: Date;
             incomeEntryId: string;
+            amountCents: bigint;
             isAutomatic: boolean;
             deductionType: string | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        description: string;
         userId: string;
-        deletedAt: Date | null;
-        employmentType: import(".prisma/client").$Enums.EmploymentType;
-        updatedAt: Date;
         referenceMonth: string;
-        notes: string | null;
         grossCents: bigint;
         netCents: bigint;
+        employmentType: import(".prisma/client").$Enums.EmploymentType;
+        description: string;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
     }>;
     findAll(user: AuthenticatedUser): Promise<({
         deductions: {
             id: string;
-            createdAt: Date;
             description: string;
-            amountCents: bigint;
+            createdAt: Date;
             incomeEntryId: string;
+            amountCents: bigint;
             isAutomatic: boolean;
             deductionType: string | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        description: string;
         userId: string;
-        deletedAt: Date | null;
-        employmentType: import(".prisma/client").$Enums.EmploymentType;
-        updatedAt: Date;
         referenceMonth: string;
-        notes: string | null;
         grossCents: bigint;
         netCents: bigint;
+        employmentType: import(".prisma/client").$Enums.EmploymentType;
+        description: string;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
     })[]>;
     findOne(user: AuthenticatedUser, id: string): Promise<{
         deductions: {
             id: string;
-            createdAt: Date;
             description: string;
-            amountCents: bigint;
+            createdAt: Date;
             incomeEntryId: string;
+            amountCents: bigint;
             isAutomatic: boolean;
             deductionType: string | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        description: string;
         userId: string;
-        deletedAt: Date | null;
-        employmentType: import(".prisma/client").$Enums.EmploymentType;
-        updatedAt: Date;
         referenceMonth: string;
-        notes: string | null;
         grossCents: bigint;
         netCents: bigint;
+        employmentType: import(".prisma/client").$Enums.EmploymentType;
+        description: string;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
     }>;
     update(user: AuthenticatedUser, id: string, dto: UpdateIncomeDto): Promise<{
         deductions: {
             id: string;
-            createdAt: Date;
             description: string;
-            amountCents: bigint;
+            createdAt: Date;
             incomeEntryId: string;
+            amountCents: bigint;
             isAutomatic: boolean;
             deductionType: string | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        description: string;
         userId: string;
-        deletedAt: Date | null;
-        employmentType: import(".prisma/client").$Enums.EmploymentType;
-        updatedAt: Date;
         referenceMonth: string;
-        notes: string | null;
         grossCents: bigint;
         netCents: bigint;
+        employmentType: import(".prisma/client").$Enums.EmploymentType;
+        description: string;
+        notes: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
     }>;
     remove(user: AuthenticatedUser, id: string): Promise<void>;
 }

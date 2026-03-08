@@ -51,10 +51,32 @@ export class IncomeController {
     schema: {
       type: 'object',
       properties: {
-        grossCents: { type: 'number', example: 700000 },
-        inssCents: { type: 'number', example: 77872 },
-        irrfCents: { type: 'number', example: 46841 },
-        netCents: { type: 'number', example: 575287 },
+        grossCents: { type: 'number', example: 750000 },
+        inssCents: { type: 'number', example: 85150 },
+        irrfCents: { type: 'number', example: 82619 },
+        dependentAllowanceTotalCents: { type: 'number', example: 0 },
+        netCents: { type: 'number', example: 582231 },
+        inssSlices: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              rateBps: { type: 'number', example: 750 },
+              appliedToCents: { type: 'number', example: 162100 },
+              contributionCents: { type: 'number', example: 12157 },
+            },
+          },
+        },
+        irrfDetail: {
+          type: 'object',
+          properties: {
+            taxableBasisCents: { type: 'number', example: 664850 },
+            rateBps: { type: 'number', example: 2750 },
+            deductionAppliedCents: { type: 'number', example: 90873 },
+            monthlyReductionCents: { type: 'number', example: 9341 },
+            totalCents: { type: 'number', example: 82619 },
+          },
+        },
       },
     },
   })
