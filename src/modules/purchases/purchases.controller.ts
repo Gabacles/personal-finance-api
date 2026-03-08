@@ -5,7 +5,13 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   AuthenticatedUser,
   CurrentUser,
@@ -22,6 +28,8 @@ export class PurchasesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Record a one-time credit card purchase' })
+  @ApiCreatedResponse({ description: 'Purchase created successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreatePurchaseDto,

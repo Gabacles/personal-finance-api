@@ -4,7 +4,7 @@ import {
   HealthCheckService,
   PrismaHealthIndicator,
 } from '@nestjs/terminus';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../shared/database/prisma.service';
 import { Public } from '../shared/decorators/public.decorator';
 
@@ -20,6 +20,18 @@ export class HealthController {
   @Get()
   @Public()
   @HealthCheck()
+  @ApiOkResponse({
+    description: 'Health status for API dependencies.',
+    schema: {
+      type: 'object',
+      example: {
+        status: 'ok',
+        info: { database: { status: 'up' } },
+        error: {},
+        details: { database: { status: 'up' } },
+      },
+    },
+  })
   check() {
     return this.health.check([
       () =>

@@ -9,7 +9,14 @@ import {
   Post,
   Body,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   AuthenticatedUser,
   CurrentUser,
@@ -26,6 +33,8 @@ export class InstallmentsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create an installment plan (generates N transaction rows)' })
+  @ApiCreatedResponse({ description: 'Installment plan created successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateInstallmentPlanDto,
@@ -36,6 +45,8 @@ export class InstallmentsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List all installment plans for the authenticated user' })
+  @ApiOkResponse({ description: 'List of installment plans.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.installmentsService.findAll(user.id);
   }
@@ -43,6 +54,8 @@ export class InstallmentsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a single installment plan with its full schedule' })
+  @ApiOkResponse({ description: 'Installment plan with schedule.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -53,6 +66,8 @@ export class InstallmentsController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel an active installment plan (soft-deletes future installments)' })
+  @ApiOkResponse({ description: 'Installment plan cancelled successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   cancel(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

@@ -28,10 +28,10 @@ export declare class InstallmentsController {
             id: string;
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
+            description: string;
             userId: string;
             deletedAt: Date | null;
             categoryId: string | null;
-            description: string;
             updatedAt: Date;
             amountCents: bigint;
             origin: import(".prisma/client").$Enums.TransactionOrigin;
@@ -46,17 +46,17 @@ export declare class InstallmentsController {
     } & {
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.InstallmentStatus;
+        description: string;
         userId: string;
         deletedAt: Date | null;
         categoryId: string | null;
-        description: string;
         updatedAt: Date;
         notes: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
         firstReferenceMonth: string;
-        status: import(".prisma/client").$Enums.InstallmentStatus;
         purchaseDate: Date;
     }>;
     findAll(user: AuthenticatedUser): Promise<({
@@ -83,10 +83,10 @@ export declare class InstallmentsController {
             id: string;
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
+            description: string;
             userId: string;
             deletedAt: Date | null;
             categoryId: string | null;
-            description: string;
             updatedAt: Date;
             amountCents: bigint;
             origin: import(".prisma/client").$Enums.TransactionOrigin;
@@ -101,17 +101,17 @@ export declare class InstallmentsController {
     } & {
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.InstallmentStatus;
+        description: string;
         userId: string;
         deletedAt: Date | null;
         categoryId: string | null;
-        description: string;
         updatedAt: Date;
         notes: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
         firstReferenceMonth: string;
-        status: import(".prisma/client").$Enums.InstallmentStatus;
         purchaseDate: Date;
     })[]>;
     findOne(user: AuthenticatedUser, id: string): Promise<{
@@ -138,10 +138,10 @@ export declare class InstallmentsController {
             id: string;
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
+            description: string;
             userId: string;
             deletedAt: Date | null;
             categoryId: string | null;
-            description: string;
             updatedAt: Date;
             amountCents: bigint;
             origin: import(".prisma/client").$Enums.TransactionOrigin;
@@ -156,17 +156,17 @@ export declare class InstallmentsController {
     } & {
         id: string;
         createdAt: Date;
+        status: import(".prisma/client").$Enums.InstallmentStatus;
+        description: string;
         userId: string;
         deletedAt: Date | null;
         categoryId: string | null;
-        description: string;
         updatedAt: Date;
         notes: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
         firstReferenceMonth: string;
-        status: import(".prisma/client").$Enums.InstallmentStatus;
         purchaseDate: Date;
     }>;
     cancel(user: AuthenticatedUser, id: string): Promise<import("./installments.service").CancelResult>;

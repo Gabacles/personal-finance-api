@@ -11,7 +11,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { TransactionType } from '@prisma/client';
 import { IsEnum, IsOptional } from 'class-validator';
 import { CurrentUser, AuthenticatedUser } from '../../shared/decorators/current-user.decorator';
@@ -34,6 +43,8 @@ export class CategoriesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a user-defined category' })
+  @ApiCreatedResponse({ description: 'Category created successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateCategoryDto,
@@ -45,6 +56,8 @@ export class CategoriesController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List all categories (system + user-defined)' })
   @ApiQuery({ name: 'type', enum: TransactionType, required: false })
+  @ApiOkResponse({ description: 'List of categories.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(@CurrentUser() user: AuthenticatedUser, @Query() query: CategoriesFilterDto) {
     return this.categoriesService.findAll(user.id, query.type);
   }
@@ -52,6 +65,8 @@ export class CategoriesController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Rename a user-defined category (type is immutable)' })
+  @ApiOkResponse({ description: 'Category updated successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -63,6 +78,8 @@ export class CategoriesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete a user-defined category (blocked if in use)' })
+  @ApiNoContentResponse({ description: 'Category deleted successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   async remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

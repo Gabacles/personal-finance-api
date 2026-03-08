@@ -11,7 +11,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   AuthenticatedUser,
   CurrentUser,
@@ -37,6 +46,19 @@ export class IncomeController {
   @ApiOperation({
     summary: 'Estimate CLT tax deductions (INSS + IRRF) — public, no auth required',
   })
+  @ApiOkResponse({
+    description: 'Tax estimation for a gross salary.',
+    schema: {
+      type: 'object',
+      properties: {
+        grossCents: { type: 'number', example: 700000 },
+        inssCents: { type: 'number', example: 77872 },
+        irrfCents: { type: 'number', example: 46841 },
+        netCents: { type: 'number', example: 575287 },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters.' })
   estimate(@Query() query: EstimateTaxDto) {
     const year = query.year ?? new Date().getUTCFullYear();
     return this.taxCalculatorService.computeCLT(
@@ -50,6 +72,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register income for a reference month' })
+  @ApiCreatedResponse({ description: 'Income entry created successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   register(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateIncomeDto,
@@ -61,6 +85,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List all income entries' })
+  @ApiOkResponse({ description: 'List of income entries.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.incomeService.findAll(user.id);
   }
@@ -69,6 +95,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a single income entry with deductions' })
+  @ApiOkResponse({ description: 'Income entry with deductions.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -80,6 +108,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update income entry gross amount and deductions' })
+  @ApiOkResponse({ description: 'Updated income entry.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -92,6 +122,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete an income entry and its linked transaction' })
+  @ApiNoContentResponse({ description: 'Income entry deleted successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   async remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
