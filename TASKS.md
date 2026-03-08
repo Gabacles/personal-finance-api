@@ -255,31 +255,40 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M4 complete (TransactionsService needed)
 
-- [ ] M8-01: Implement `TaxCalculatorService.computeCLT(grossCents, year, dependents)`:
+- [x] M8-01: Implement `TaxCalculatorService.computeCLT(grossCents, year, dependents)`:
   - Load `DeductionTable` rows for INSS and IRRF for the given year
   - Calculate INSS progressively across brackets
   - Calculate IRRF on (gross − INSS − dependent allowances)
   - Return full breakdown with bracket detail
   - Throw `EntityNotFoundException` if no table exists for the year
-- [ ] M8-02: Unit tests for `TaxCalculatorService` with 2026 bracket values:
+- [x] M8-02: Unit tests for `TaxCalculatorService` with 2026 bracket values:
   - salary below all INSS thresholds
   - salary spanning multiple INSS brackets
   - salary above IRRF exemption threshold
   - salary above all IRRF brackets
   - with and without dependents
-- [ ] M8-03: Implement `GET /api/v1/income/estimate` — stateless, `@Public()`, calls `TaxCalculatorService`
-- [ ] M8-04: Implement `IncomeRepository` (`create`, `findByMonth`, `findById`, `updateGross`)
-- [ ] M8-05: Implement `IncomeDeductionRepository` (`createMany`, `deleteByEntry`, `findByEntry`)
-- [ ] M8-06: Implement `IncomeService.register`:
+- [x] M8-03: Implement `GET /api/v1/income/estimate` — stateless, `@Public()`, calls `TaxCalculatorService`
+- [x] M8-04: Implement `IncomeRepository` (`create`, `findByMonth`, `findById`, `updateGross`)
+- [x] M8-05: Implement `IncomeDeductionRepository` (`createMany`, `deleteByEntry`, `findByEntry`)
+- [x] M8-06: Implement `IncomeService.register`:
   1. Snapshot `employment_type` from user
   2. If CLT: call `TaxCalculatorService.computeCLT` → persist auto deductions
   3. Persist custom deductions
   4. Assert net > 0
   5. Call `TransactionsService.createIncomeTransaction` with net amount
   6. Return full entry with deduction breakdown
-- [ ] M8-07: Implement `IncomeService.update` — full recalculation on gross change
-- [ ] M8-08: Implement `POST /api/v1/income`, `GET /api/v1/income`, `GET /api/v1/income/:id`, `PATCH /api/v1/income/:id`
-- [ ] M8-09: Unit tests for `IncomeService` (CLT auto-deductions, PJ no auto-deductions, net ≤ 0 rejection)
+- [x] M8-07: Implement `IncomeService.update` — full recalculation on gross change
+- [x] M8-08: Implement `POST /api/v1/income`, `GET /api/v1/income`, `GET /api/v1/income/:id`, `PATCH /api/v1/income/:id`
+- [x] M8-09: Unit tests for `IncomeService` (CLT auto-deductions, PJ no auto-deductions, net ≤ 0 rejection)
+
+**Completed:** March 7, 2026
+
+**Notes:**
+- 86 total tests (9 suites), TypeScript clean, smoke tested all endpoints
+- Pure computation exported from `tax-calculator.service.ts` as `calcInss` / `calcIrrf` helpers — tested without DI
+- INSS: progressive per bracket slice; capped when `rateBps: null` final bracket
+- IRRF: simplified tabela progressiva (`taxable * rate - deduction`); dependent allowance = 18,959 per dependent (2026)
+- On update: if `customDeductions` provided → delete all + recreate everything; otherwise only auto deductions are replaced
 
 ---
 
