@@ -13,6 +13,7 @@ import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.
 import { PurchasesModule } from './modules/purchases/purchases.module';
 import { RecurringModule } from './modules/recurring/recurring.module';
 import { IncomeModule } from './modules/income/income.module';
+import { ReportingModule } from './modules/reporting/reporting.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -34,6 +35,7 @@ import { UsersModule } from './modules/users/users.module';
     InstallmentsModule,
     RecurringModule,
     IncomeModule,
+    ReportingModule,
   ],
   providers: [
     {

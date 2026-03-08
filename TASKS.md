@@ -297,22 +297,22 @@ Each milestone's tasks are ordered by dependency. A task marked `[ ]` is pending
 
 **Dependencies:** M5, M6, M7, M8 complete (all write modules done)
 
-- [ ] M9-01: Implement `SummaryService.getForMonth(userId, month)`:
+- [x] M9-01: Implement `SummaryService.getForMonth(userId, month)`:
   1. Call `RecurringService.generateForMonth(userId, month)` (side-effect trigger)
   2. Query all transactions for the month (expenses + income)
   3. Query income entries and their deduction totals
   4. Aggregate: by category, by payment method, by origin type (one-time / installment / recurring)
   5. Compose and return `MonthlySummaryDto`
-- [ ] M9-02: Implement `GET /api/v1/summary/:month`
-- [ ] M9-03: Implement `DashboardService.get(userId, month, projectionMonths)`:
+- [x] M9-02: Implement `GET /api/v1/summary/:month`
+- [x] M9-03: Implement `DashboardService.get(userId, month, projectionMonths)`:
   1. Call `SummaryService.getForMonth` for current month
   2. For each future month: query open installments + active recurring templates → compute projected balance
   3. Assign confidence level (`HIGH` for +1 month, `MEDIUM` for +2/+3)
   4. Compose and return `DashboardResponseDto`
-- [ ] M9-04: Implement `GET /api/v1/dashboard`
-- [ ] M9-05: Implement `GET /api/v1/payment-methods/:id/statement`
-- [ ] M9-06: Implement `GET /api/v1/installment-plans` (overview with remaining totals — likely already done in M6-08, verify enrichment is correct)
-- [ ] M9-07: Integration tests for `SummaryService` covering:
+- [x] M9-04: Implement `GET /api/v1/dashboard`
+- [x] M9-05: Implement `GET /api/v1/payment-methods/:id/statement`
+- [x] M9-06: Implement `GET /api/v1/installment-plans` (overview with remaining totals — likely already done in M6-08, verify enrichment is correct)
+- [x] M9-07: Integration tests for `SummaryService` covering:
   - month with no income returns zero income fields
   - installment charges correctly bucketed as `installment_cents`
   - recurring-generated transactions correctly bucketed as `recurring_cents`

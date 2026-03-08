@@ -71,4 +71,30 @@ export class PaymentMethodsService {
     if (!pm) throw new EntityNotFoundException('PaymentMethod', id);
     return pm;
   }
+
+  async getStatement(id: string, userId: string, month: string) {
+    const pm = await this.paymentMethodsRepository.findById(id, userId);
+    if (!pm) throw new EntityNotFoundException('PaymentMethod', id);
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        paymentMethodId: id,
+        referenceMonth: month,
+        deletedAt: null,
+      },
+      include: {
+        category: true,
+        paymentMethod: { include: { creditCard: true } },
+        installmentPlan: true,
+      },
+      orderBy: { transactionDate: 'desc' },
+    });
+
+    const totalCents = transactions.reduce(
+      (s, t) => s + t.amountCents,
+      0n,
+    );
+
+    return { paymentMethod: pm, referenceMonth: month, totalCents, transactions };
+  }
 }
