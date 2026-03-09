@@ -59,6 +59,27 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateRecurringDto.prototype, "paymentMethodId", void 0);
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: true,
+        description: 'Override whether INSS/IRRF deductions are applied during generation. Only valid when type=INCOME.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_transformer_1.Type)(() => Boolean),
+    __metadata("design:type", Boolean)
+], UpdateRecurringDto.prototype, "applyTaxDeductions", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 2,
+        description: 'Number of tax dependents for IRRF calculation.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], UpdateRecurringDto.prototype, "dependents", void 0);
+__decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

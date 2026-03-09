@@ -11,6 +11,8 @@ const common_1 = require("@nestjs/common");
 const categories_module_1 = require("../categories/categories.module");
 const payment_methods_module_1 = require("../payment-methods/payment-methods.module");
 const transactions_module_1 = require("../transactions/transactions.module");
+const users_module_1 = require("../users/users.module");
+const tax_calculator_service_1 = require("../income/tax-calculator.service");
 const recurring_controller_1 = require("./recurring.controller");
 const recurring_repository_1 = require("./recurring.repository");
 const recurring_service_1 = require("./recurring.service");
@@ -19,9 +21,9 @@ let RecurringModule = class RecurringModule {
 exports.RecurringModule = RecurringModule;
 exports.RecurringModule = RecurringModule = __decorate([
     (0, common_1.Module)({
-        imports: [payment_methods_module_1.PaymentMethodsModule, categories_module_1.CategoriesModule, transactions_module_1.TransactionsModule],
+        imports: [payment_methods_module_1.PaymentMethodsModule, categories_module_1.CategoriesModule, transactions_module_1.TransactionsModule, users_module_1.UsersModule],
         controllers: [recurring_controller_1.RecurringController],
-        providers: [recurring_service_1.RecurringService, recurring_repository_1.RecurringRepository],
+        providers: [recurring_service_1.RecurringService, recurring_repository_1.RecurringRepository, tax_calculator_service_1.TaxCalculatorService],
         exports: [recurring_service_1.RecurringService],
     })
 ], RecurringModule);

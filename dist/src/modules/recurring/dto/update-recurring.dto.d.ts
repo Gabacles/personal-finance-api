@@ -5,5 +5,7 @@ export declare class UpdateRecurringDto {
     dayOfMonth?: number;
     categoryId?: string;
     paymentMethodId?: string;
+    applyTaxDeductions?: boolean;
+    dependents?: number;
     notes?: string;
 }

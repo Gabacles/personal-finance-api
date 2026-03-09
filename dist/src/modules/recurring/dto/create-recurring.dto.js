@@ -68,6 +68,27 @@ __decorate([
     __metadata("design:type", String)
 ], CreateRecurringDto.prototype, "paymentMethodId", void 0);
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: true,
+        description: 'Only valid when type=INCOME. When true, amountCents is treated as GROSS salary and INSS/IRRF are automatically deducted (CLT users only) before the transaction is created. Defaults to false.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_transformer_1.Type)(() => Boolean),
+    __metadata("design:type", Boolean)
+], CreateRecurringDto.prototype, "applyTaxDeductions", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 2,
+        description: 'Number of tax dependents used in the IRRF calculation. Only relevant when applyTaxDeductions=true and the user is CLT. Defaults to 0.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], CreateRecurringDto.prototype, "dependents", void 0);
+__decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: 'Monthly streaming subscription' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

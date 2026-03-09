@@ -8,5 +8,7 @@ export declare class CreateRecurringDto {
     dayOfMonth?: number;
     categoryId?: string;
     paymentMethodId?: string;
+    applyTaxDeductions?: boolean;
+    dependents?: number;
     notes?: string;
 }

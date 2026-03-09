@@ -17,6 +17,8 @@ const categories_service_1 = require("../categories/categories.service");
 const payment_methods_repository_1 = require("../payment-methods/payment-methods.repository");
 const credit_card_statement_service_1 = require("../payment-methods/credit-card-statement.service");
 const transactions_service_1 = require("../transactions/transactions.service");
+const tax_calculator_service_1 = require("../income/tax-calculator.service");
+const users_service_1 = require("../users/users.service");
 const recurring_repository_1 = require("./recurring.repository");
 function currentReferenceMonth() {
     const now = new Date();
@@ -25,15 +27,20 @@ function currentReferenceMonth() {
     return `${yyyy}-${mm}`;
 }
 let RecurringService = class RecurringService {
-    constructor(recurringRepository, paymentMethodsRepository, categoriesService, transactionsService) {
+    constructor(recurringRepository, paymentMethodsRepository, categoriesService, transactionsService, taxCalculatorService, usersService) {
         this.recurringRepository = recurringRepository;
         this.paymentMethodsRepository = paymentMethodsRepository;
         this.categoriesService = categoriesService;
         this.transactionsService = transactionsService;
+        this.taxCalculatorService = taxCalculatorService;
+        this.usersService = usersService;
     }
     async create(userId, dto) {
         if (dto.type === client_1.TransactionType.INCOME && dto.paymentMethodId) {
             throw new domain_exceptions_1.BusinessRuleException('INCOME_WITH_PAYMENT_METHOD', 'Income recurring transactions cannot have a payment method');
+        }
+        if (dto.applyTaxDeductions && dto.type !== client_1.TransactionType.INCOME) {
+            throw new domain_exceptions_1.BusinessRuleException('TAX_DEDUCTIONS_ONLY_FOR_INCOME', 'applyTaxDeductions can only be set for INCOME recurring transactions');
         }
         if (dto.paymentMethodId) {
             const pm = await this.paymentMethodsRepository.findById(dto.paymentMethodId, userId);
@@ -60,21 +67,36 @@ let RecurringService = class RecurringService {
             categoryId: dto.categoryId,
             paymentMethodId: dto.paymentMethodId,
             notes: dto.notes,
+            applyTaxDeductions: dto.applyTaxDeductions ?? false,
+            dependents: dto.dependents ?? 0,
         });
     }
     async generateForMonth(userId, month) {
         const templates = await this.recurringRepository.findActiveForMonth(userId, month);
         let generated = 0;
         let skipped = 0;
+        let userEmploymentType = null;
         for (const template of templates) {
             const referenceMonth = await this.computeReferenceMonth(template, month);
+            let amountCents = template.amountCents;
+            if (template.applyTaxDeductions && template.type === client_1.TransactionType.INCOME) {
+                if (userEmploymentType === null) {
+                    const user = await this.usersService.findById(userId);
+                    userEmploymentType = user.employmentType;
+                }
+                if (userEmploymentType === client_1.EmploymentType.CLT) {
+                    const year = parseInt(month.slice(0, 4), 10);
+                    const breakdown = await this.taxCalculatorService.computeCLT(template.amountCents, year, template.dependents);
+                    amountCents = breakdown.netCents;
+                }
+            }
             const result = await this.transactionsService.createFromRecurring({
                 userId,
                 recurringTransactionId: template.id,
                 categoryId: template.categoryId ?? undefined,
                 paymentMethodId: template.paymentMethodId ?? undefined,
                 description: template.description,
-                amountCents: template.amountCents,
+                amountCents,
                 type: template.type,
                 referenceMonth,
                 transactionDate: new Date(),
@@ -119,6 +141,9 @@ let RecurringService = class RecurringService {
         if (dto.endMonth && dto.endMonth < template.startMonth) {
             throw new domain_exceptions_1.BusinessRuleException('END_MONTH_BEFORE_START_MONTH', 'endMonth must be equal to or after startMonth');
         }
+        if (dto.applyTaxDeductions && template.type !== client_1.TransactionType.INCOME) {
+            throw new domain_exceptions_1.BusinessRuleException('TAX_DEDUCTIONS_ONLY_FOR_INCOME', 'applyTaxDeductions can only be set for INCOME recurring transactions');
+        }
         return this.recurringRepository.update(id, {
             ...(dto.description !== undefined ? { description: dto.description } : {}),
             ...(dto.amountCents !== undefined ? { amountCents: BigInt(dto.amountCents) } : {}),
@@ -127,6 +152,8 @@ let RecurringService = class RecurringService {
             ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
             ...(dto.paymentMethodId !== undefined ? { paymentMethodId: dto.paymentMethodId } : {}),
             ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+            ...(dto.applyTaxDeductions !== undefined ? { applyTaxDeductions: dto.applyTaxDeductions } : {}),
+            ...(dto.dependents !== undefined ? { dependents: dto.dependents } : {}),
         });
     }
     async activate(id, userId) {
@@ -174,6 +201,8 @@ exports.RecurringService = RecurringService = __decorate([
     __metadata("design:paramtypes", [recurring_repository_1.RecurringRepository,
         payment_methods_repository_1.PaymentMethodsRepository,
         categories_service_1.CategoriesService,
-        transactions_service_1.TransactionsService])
+        transactions_service_1.TransactionsService,
+        tax_calculator_service_1.TaxCalculatorService,
+        users_service_1.UsersService])
 ], RecurringService);
 //# sourceMappingURL=recurring.service.js.map

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PaymentMethodType, RecurringTransaction, TransactionType } from '@prisma/client';
+import { EmploymentType, PaymentMethodType, RecurringTransaction, TransactionType } from '@prisma/client';
 import {
   BusinessRuleException,
   EntityNotFoundException,
@@ -8,6 +8,8 @@ import { CategoriesService } from '../categories/categories.service';
 import { PaymentMethodsRepository } from '../payment-methods/payment-methods.repository';
 import { computeStatementMonth } from '../payment-methods/credit-card-statement.service';
 import { TransactionsService } from '../transactions/transactions.service';
+import { TaxCalculatorService } from '../income/tax-calculator.service';
+import { UsersService } from '../users/users.service';
 import { RecurringFilters, RecurringRepository } from './recurring.repository';
 import { CreateRecurringDto } from './dto/create-recurring.dto';
 import { UpdateRecurringDto } from './dto/update-recurring.dto';
@@ -31,6 +33,8 @@ export class RecurringService {
     private readonly paymentMethodsRepository: PaymentMethodsRepository,
     private readonly categoriesService: CategoriesService,
     private readonly transactionsService: TransactionsService,
+    private readonly taxCalculatorService: TaxCalculatorService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(userId: string, dto: CreateRecurringDto): Promise<RecurringTransaction> {
@@ -39,6 +43,14 @@ export class RecurringService {
       throw new BusinessRuleException(
         'INCOME_WITH_PAYMENT_METHOD',
         'Income recurring transactions cannot have a payment method',
+      );
+    }
+
+    // applyTaxDeductions is only valid for INCOME
+    if (dto.applyTaxDeductions && dto.type !== TransactionType.INCOME) {
+      throw new BusinessRuleException(
+        'TAX_DEDUCTIONS_ONLY_FOR_INCOME',
+        'applyTaxDeductions can only be set for INCOME recurring transactions',
       );
     }
 
@@ -84,6 +96,8 @@ export class RecurringService {
       categoryId: dto.categoryId,
       paymentMethodId: dto.paymentMethodId,
       notes: dto.notes,
+      applyTaxDeductions: dto.applyTaxDeductions ?? false,
+      dependents: dto.dependents ?? 0,
     });
   }
 
@@ -97,8 +111,30 @@ export class RecurringService {
     let generated = 0;
     let skipped = 0;
 
+    // Lazily fetch the user only if at least one template requests tax deductions
+    let userEmploymentType: EmploymentType | null = null;
+
     for (const template of templates) {
       const referenceMonth = await this.computeReferenceMonth(template, month);
+
+      // Compute net amount when the template requests automatic tax deductions
+      let amountCents = template.amountCents;
+      if (template.applyTaxDeductions && template.type === TransactionType.INCOME) {
+        if (userEmploymentType === null) {
+          const user = await this.usersService.findById(userId);
+          userEmploymentType = user.employmentType;
+        }
+        if (userEmploymentType === EmploymentType.CLT) {
+          const year = parseInt(month.slice(0, 4), 10);
+          const breakdown = await this.taxCalculatorService.computeCLT(
+            template.amountCents,
+            year,
+            template.dependents,
+          );
+          amountCents = breakdown.netCents;
+        }
+        // For PJ/OTHER: no automatic deductions — use the stored amount as-is
+      }
 
       const result = await this.transactionsService.createFromRecurring({
         userId,
@@ -106,7 +142,7 @@ export class RecurringService {
         categoryId: template.categoryId ?? undefined,
         paymentMethodId: template.paymentMethodId ?? undefined,
         description: template.description,
-        amountCents: template.amountCents,
+        amountCents,
         type: template.type,
         referenceMonth,
         transactionDate: new Date(),
@@ -176,6 +212,14 @@ export class RecurringService {
       );
     }
 
+    // applyTaxDeductions can only be set on INCOME templates
+    if (dto.applyTaxDeductions && template.type !== TransactionType.INCOME) {
+      throw new BusinessRuleException(
+        'TAX_DEDUCTIONS_ONLY_FOR_INCOME',
+        'applyTaxDeductions can only be set for INCOME recurring transactions',
+      );
+    }
+
     return this.recurringRepository.update(id, {
       ...(dto.description !== undefined ? { description: dto.description } : {}),
       ...(dto.amountCents !== undefined ? { amountCents: BigInt(dto.amountCents) } : {}),
@@ -184,6 +228,8 @@ export class RecurringService {
       ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
       ...(dto.paymentMethodId !== undefined ? { paymentMethodId: dto.paymentMethodId } : {}),
       ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+      ...(dto.applyTaxDeductions !== undefined ? { applyTaxDeductions: dto.applyTaxDeductions } : {}),
+      ...(dto.dependents !== undefined ? { dependents: dto.dependents } : {}),
     });
   }
 
