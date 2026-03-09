@@ -11,7 +11,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { PaymentMethodType } from '@prisma/client';
 import { IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import {
@@ -43,6 +52,8 @@ export class PaymentMethodsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Add a new credit card or payment method' })
+  @ApiCreatedResponse({ description: 'Payment method created successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreatePaymentMethodDto,
@@ -54,6 +65,8 @@ export class PaymentMethodsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List all payment methods for the authenticated user' })
   @ApiQuery({ name: 'type', enum: PaymentMethodType, required: false })
+  @ApiOkResponse({ description: 'List of payment methods.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: PaymentMethodsFilterDto,
@@ -64,6 +77,8 @@ export class PaymentMethodsController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a single payment method by ID' })
+  @ApiOkResponse({ description: 'Payment method details.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -74,6 +89,8 @@ export class PaymentMethodsController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update payment method name or credit card details' })
+  @ApiOkResponse({ description: 'Payment method updated successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -85,6 +102,8 @@ export class PaymentMethodsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete a payment method (blocked if it has upcoming installments)' })
+  @ApiNoContentResponse({ description: 'Payment method deleted successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   async remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -96,6 +115,8 @@ export class PaymentMethodsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all transactions for a payment method in a given month' })
   @ApiQuery({ name: 'month', example: '2026-03', description: 'Reference month in YYYY-MM format' })
+  @ApiOkResponse({ description: 'Credit card statement for the requested month.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   getStatement(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

@@ -4,35 +4,35 @@ const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 async function main() {
     console.log('Seeding deduction tables (2026)...');
+    const inssBrackets2026 = [
+        { upToCents: 162_100, rateBps: 750 },
+        { upToCents: 290_284, rateBps: 900 },
+        { upToCents: 435_427, rateBps: 1200 },
+        { upToCents: 847_555, rateBps: 1400 },
+        { upToCents: null, rateBps: null },
+    ];
     await prisma.deductionTable.upsert({
         where: { type_validForYear: { type: 'INSS', validForYear: 2026 } },
-        update: {},
-        create: {
-            type: 'INSS',
-            validForYear: 2026,
-            brackets: [
-                { upToCents: 182_074, rateBps: 750 },
-                { upToCents: 303_456, rateBps: 900 },
-                { upToCents: 455_184, rateBps: 1200 },
-                { upToCents: 908_850, rateBps: 1400 },
-                { upToCents: null, rateBps: null },
-            ],
-        },
+        update: { validForYear: 2026, brackets: inssBrackets2026 },
+        create: { type: 'INSS', validForYear: 2026, brackets: inssBrackets2026 },
     });
+    const irrfBrackets2026 = [
+        { upToCents: 242_880, rateBps: 0, deductionCents: 0 },
+        { upToCents: 282_665, rateBps: 750, deductionCents: 18_216 },
+        { upToCents: 375_105, rateBps: 1500, deductionCents: 39_416 },
+        { upToCents: 466_468, rateBps: 2250, deductionCents: 67_549 },
+        { upToCents: null, rateBps: 2750, deductionCents: 90_873 },
+    ];
+    const irrfMeta2026 = {
+        reductionThreshold1Cents: 500_000,
+        reductionThreshold2Cents: 735_000,
+        reductionFixedCents: 97_862,
+        reductionRatePer1M: 133_145,
+    };
     await prisma.deductionTable.upsert({
         where: { type_validForYear: { type: 'IRRF', validForYear: 2026 } },
-        update: {},
-        create: {
-            type: 'IRRF',
-            validForYear: 2026,
-            brackets: [
-                { upToCents: 259_600, rateBps: 0, deductionCents: 0 },
-                { upToCents: 386_800, rateBps: 750, deductionCents: 19_470 },
-                { upToCents: 514_100, rateBps: 1500, deductionCents: 48_480 },
-                { upToCents: 641_500, rateBps: 2250, deductionCents: 87_033 },
-                { upToCents: null, rateBps: 2750, deductionCents: 119_138 },
-            ],
-        },
+        update: { validForYear: 2026, brackets: irrfBrackets2026, meta: irrfMeta2026 },
+        create: { type: 'IRRF', validForYear: 2026, brackets: irrfBrackets2026, meta: irrfMeta2026 },
     });
     console.log('Deduction tables seeded successfully.');
 }

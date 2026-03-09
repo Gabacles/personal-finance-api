@@ -23,12 +23,22 @@ const summary_service_1 = require("./summary.service");
 class DashboardQueryDto {
 }
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Reference month (YYYY-MM). Defaults to current month.',
+        example: '2026-03',
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.Matches)(/^\d{4}-\d{2}$/, { message: 'month must be in YYYY-MM format' }),
     __metadata("design:type", String)
 ], DashboardQueryDto.prototype, "month", void 0);
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'How many future months to project (1-12). Defaults to 3.',
+        minimum: 1,
+        maximum: 12,
+        example: 3,
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsInt)(),
@@ -60,6 +70,8 @@ __decorate([
     (0, common_1.Get)('summary/:month'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'Get aggregated financial summary for a given month (YYYY-MM)' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Monthly financial summary.' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Missing or invalid bearer token.' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('month')),
     __metadata("design:type", Function),
@@ -74,6 +86,8 @@ __decorate([
     }),
     (0, swagger_1.ApiQuery)({ name: 'month', required: false, description: 'Reference month (YYYY-MM). Defaults to current month.' }),
     (0, swagger_1.ApiQuery)({ name: 'projectionMonths', required: false, description: 'How many future months to project (1–12). Defaults to 3.' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Dashboard with current month and projections.' }),
+    (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Missing or invalid bearer token.' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),

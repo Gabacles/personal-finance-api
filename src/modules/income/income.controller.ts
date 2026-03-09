@@ -11,7 +11,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   AuthenticatedUser,
   CurrentUser,
@@ -37,6 +46,41 @@ export class IncomeController {
   @ApiOperation({
     summary: 'Estimate CLT tax deductions (INSS + IRRF) — public, no auth required',
   })
+  @ApiOkResponse({
+    description: 'Tax estimation for a gross salary.',
+    schema: {
+      type: 'object',
+      properties: {
+        grossCents: { type: 'number', example: 750000 },
+        inssCents: { type: 'number', example: 85150 },
+        irrfCents: { type: 'number', example: 82619 },
+        dependentAllowanceTotalCents: { type: 'number', example: 0 },
+        netCents: { type: 'number', example: 582231 },
+        inssSlices: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              rateBps: { type: 'number', example: 750 },
+              appliedToCents: { type: 'number', example: 162100 },
+              contributionCents: { type: 'number', example: 12157 },
+            },
+          },
+        },
+        irrfDetail: {
+          type: 'object',
+          properties: {
+            taxableBasisCents: { type: 'number', example: 664850 },
+            rateBps: { type: 'number', example: 2750 },
+            deductionAppliedCents: { type: 'number', example: 90873 },
+            monthlyReductionCents: { type: 'number', example: 9341 },
+            totalCents: { type: 'number', example: 82619 },
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters.' })
   estimate(@Query() query: EstimateTaxDto) {
     const year = query.year ?? new Date().getUTCFullYear();
     return this.taxCalculatorService.computeCLT(
@@ -50,6 +94,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register income for a reference month' })
+  @ApiCreatedResponse({ description: 'Income entry created successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   register(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateIncomeDto,
@@ -61,6 +107,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List all income entries' })
+  @ApiOkResponse({ description: 'List of income entries.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.incomeService.findAll(user.id);
   }
@@ -69,6 +117,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a single income entry with deductions' })
+  @ApiOkResponse({ description: 'Income entry with deductions.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -80,6 +130,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update income entry gross amount and deductions' })
+  @ApiOkResponse({ description: 'Updated income entry.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -92,6 +144,8 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete an income entry and its linked transaction' })
+  @ApiNoContentResponse({ description: 'Income entry deleted successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   async remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

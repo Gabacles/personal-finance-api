@@ -15,6 +15,21 @@ interface IrrfBracket {
   deductionCents: number;
 }
 
+/**
+ * Optional metadata for the IRRF table.
+ * Encodes the 2026 "monthly tax reduction" rule:
+ *   - taxable ≤ reductionThreshold1Cents     → IR = 0
+ *   - reductionThreshold1Cents < taxable ≤ reductionThreshold2Cents
+ *       → IR = IR_base - (reductionFixedCents - reductionRatePer1M × taxable / 1_000_000)
+ *   - taxable > reductionThreshold2Cents     → IR = IR_base (no reduction)
+ */
+interface IrrfMeta {
+  reductionThreshold1Cents: number; // up to R$5.000,00 → IR zero (500_000)
+  reductionThreshold2Cents: number; // up to R$7.350,00 → partial reduction (735_000)
+  reductionFixedCents: number;      // R$978,62 → 97_862 cents
+  reductionRatePer1M: number;       // 0,133145 × 1_000_000 → 133_145
+}
+
 export interface InssSlice {
   rateBps: number;
   appliedToCents: bigint;
@@ -25,6 +40,7 @@ export interface IrrfDetail {
   taxableBasisCents: bigint;
   rateBps: number;
   deductionAppliedCents: bigint;
+  monthlyReductionCents: bigint;
   totalCents: bigint;
 }
 
@@ -38,8 +54,8 @@ export interface TaxBreakdown {
   irrfDetail: IrrfDetail;
 }
 
-// 2026 IRRF per-dependent monthly allowance
-const DEPENDENT_ALLOWANCE_CENTS = 18_959n;
+// 2026 per-dependent monthly allowance: R$242,74 (Lei 14.663/2023 atualizada)
+const DEPENDENT_ALLOWANCE_CENTS = 24_274n;
 
 @Injectable()
 export class TaxCalculatorService {
@@ -64,6 +80,7 @@ export class TaxCalculatorService {
 
     const inssBrackets = inssRow.brackets as unknown as InssBracket[];
     const irrfBrackets = irrfRow.brackets as unknown as IrrfBracket[];
+    const irrfMeta = irrfRow.meta as IrrfMeta | null;
 
     const { inssCents, inssSlices } = calcInss(grossCents, inssBrackets);
     const dependentAllowanceTotalCents = BigInt(dependents) * DEPENDENT_ALLOWANCE_CENTS;
@@ -72,6 +89,7 @@ export class TaxCalculatorService {
       inssCents,
       dependentAllowanceTotalCents,
       irrfBrackets,
+      irrfMeta ?? undefined,
     );
     const netCents = grossCents - inssCents - irrfCents;
 
@@ -121,6 +139,7 @@ export function calcIrrf(
   inssCents: bigint,
   dependentAllowanceTotalCents: bigint,
   brackets: IrrfBracket[],
+  meta?: IrrfMeta,
 ): { irrfCents: bigint; irrfDetail: IrrfDetail } {
   const taxableBasisCents = grossCents - inssCents - dependentAllowanceTotalCents;
 
@@ -131,6 +150,7 @@ export function calcIrrf(
         taxableBasisCents: 0n,
         rateBps: 0,
         deductionAppliedCents: 0n,
+        monthlyReductionCents: 0n,
         totalCents: 0n,
       },
     };
@@ -149,6 +169,7 @@ export function calcIrrf(
         taxableBasisCents,
         rateBps: 0,
         deductionAppliedCents: 0n,
+        monthlyReductionCents: 0n,
         totalCents: 0n,
       },
     };
@@ -157,15 +178,39 @@ export function calcIrrf(
   const rateBps = BigInt(bracket.rateBps);
   const deductionApplied = BigInt(bracket.deductionCents);
   const grossIrrf = (taxableBasisCents * rateBps) / 10_000n;
-  const irrfCents = grossIrrf > deductionApplied ? grossIrrf - deductionApplied : 0n;
+  let irrfBase = grossIrrf > deductionApplied ? grossIrrf - deductionApplied : 0n;
+
+  // Apply 2026 monthly reduction rule when meta is present
+  let monthlyReductionCents = 0n;
+  if (meta && irrfBase > 0n) {
+    const t1 = BigInt(meta.reductionThreshold1Cents);
+    const t2 = BigInt(meta.reductionThreshold2Cents);
+
+    if (taxableBasisCents <= t1) {
+      // Full reduction → IR = 0
+      monthlyReductionCents = irrfBase;
+      irrfBase = 0n;
+    } else if (taxableBasisCents <= t2) {
+      // Partial reduction: R$978,62 - (0,133145 × base)
+      const fixedCents = BigInt(meta.reductionFixedCents);
+      const ratePer1M = BigInt(meta.reductionRatePer1M);
+      // reductionAmount = fixedCents - (ratePer1M * taxableBasisCents / 1_000_000)
+      const variablePart = (ratePer1M * taxableBasisCents) / 1_000_000n;
+      const reductionAmount = fixedCents > variablePart ? fixedCents - variablePart : 0n;
+      monthlyReductionCents = reductionAmount < irrfBase ? reductionAmount : irrfBase;
+      irrfBase = irrfBase - monthlyReductionCents;
+    }
+    // taxableBasisCents > t2 → no reduction
+  }
 
   return {
-    irrfCents,
+    irrfCents: irrfBase,
     irrfDetail: {
       taxableBasisCents,
       rateBps: bracket.rateBps,
       deductionAppliedCents: deductionApplied,
-      totalCents: irrfCents,
+      monthlyReductionCents,
+      totalCents: irrfBase,
     },
   };
 }

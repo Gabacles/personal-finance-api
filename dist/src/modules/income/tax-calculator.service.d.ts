@@ -8,6 +8,12 @@ interface IrrfBracket {
     rateBps: number;
     deductionCents: number;
 }
+interface IrrfMeta {
+    reductionThreshold1Cents: number;
+    reductionThreshold2Cents: number;
+    reductionFixedCents: number;
+    reductionRatePer1M: number;
+}
 export interface InssSlice {
     rateBps: number;
     appliedToCents: bigint;
@@ -17,6 +23,7 @@ export interface IrrfDetail {
     taxableBasisCents: bigint;
     rateBps: number;
     deductionAppliedCents: bigint;
+    monthlyReductionCents: bigint;
     totalCents: bigint;
 }
 export interface TaxBreakdown {
@@ -37,7 +44,7 @@ export declare function calcInss(grossCents: bigint, brackets: InssBracket[]): {
     inssCents: bigint;
     inssSlices: InssSlice[];
 };
-export declare function calcIrrf(grossCents: bigint, inssCents: bigint, dependentAllowanceTotalCents: bigint, brackets: IrrfBracket[]): {
+export declare function calcIrrf(grossCents: bigint, inssCents: bigint, dependentAllowanceTotalCents: bigint, brackets: IrrfBracket[], meta?: IrrfMeta): {
     irrfCents: bigint;
     irrfDetail: IrrfDetail;
 };

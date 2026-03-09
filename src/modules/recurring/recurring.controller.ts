@@ -11,7 +11,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { TransactionType } from '@prisma/client';
 import {
   AuthenticatedUser,
@@ -30,6 +39,8 @@ export class RecurringController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a recurring transaction template' })
+  @ApiCreatedResponse({ description: 'Recurring transaction created successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateRecurringDto,
@@ -42,6 +53,8 @@ export class RecurringController {
   @ApiOperation({ summary: 'List recurring transaction templates' })
   @ApiQuery({ name: 'type', enum: TransactionType, required: false })
   @ApiQuery({ name: 'isActive', type: Boolean, required: false })
+  @ApiOkResponse({ description: 'List of recurring transaction templates.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(
     @CurrentUser() user: AuthenticatedUser,
     @Query('type') type?: TransactionType,
@@ -55,6 +68,8 @@ export class RecurringController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a single recurring transaction template' })
+  @ApiOkResponse({ description: 'Recurring transaction template details.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -65,6 +80,8 @@ export class RecurringController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a recurring transaction template' })
+  @ApiOkResponse({ description: 'Recurring transaction template updated.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -76,6 +93,8 @@ export class RecurringController {
   @Patch(':id/activate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Activate a recurring transaction template' })
+  @ApiOkResponse({ description: 'Recurring transaction template activated.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   activate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -86,6 +105,8 @@ export class RecurringController {
   @Patch(':id/deactivate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate a recurring transaction template' })
+  @ApiOkResponse({ description: 'Recurring transaction template deactivated.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   deactivate(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -96,6 +117,8 @@ export class RecurringController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete a recurring transaction template' })
+  @ApiNoContentResponse({ description: 'Recurring transaction template deleted.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

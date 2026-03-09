@@ -282,6 +282,7 @@ model DeductionTable {
   type        DeductionTableType
   validForYear Int               @map("valid_for_year")
   brackets    Json
+  meta        Json?              // optional metadata (e.g. IRRF monthly reduction params)
   createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz()
 
   @@unique([type, validForYear])

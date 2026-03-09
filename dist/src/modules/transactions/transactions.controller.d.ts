@@ -36,27 +36,27 @@ export declare class TransactionsController {
         installmentPlan: {
             id: string;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.InstallmentStatus;
+            description: string;
             userId: string;
             deletedAt: Date | null;
             categoryId: string | null;
-            description: string;
             updatedAt: Date;
             notes: string | null;
             paymentMethodId: string;
             totalAmountCents: bigint;
             installmentCount: number;
             firstReferenceMonth: string;
-            status: import(".prisma/client").$Enums.InstallmentStatus;
             purchaseDate: Date;
         } | null;
     } & {
         id: string;
         type: import(".prisma/client").$Enums.TransactionType;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
         categoryId: string | null;
-        description: string;
         updatedAt: Date;
         amountCents: bigint;
         origin: import(".prisma/client").$Enums.TransactionOrigin;
@@ -98,27 +98,27 @@ export declare class TransactionsController {
         installmentPlan: {
             id: string;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.InstallmentStatus;
+            description: string;
             userId: string;
             deletedAt: Date | null;
             categoryId: string | null;
-            description: string;
             updatedAt: Date;
             notes: string | null;
             paymentMethodId: string;
             totalAmountCents: bigint;
             installmentCount: number;
             firstReferenceMonth: string;
-            status: import(".prisma/client").$Enums.InstallmentStatus;
             purchaseDate: Date;
         } | null;
     } & {
         id: string;
         type: import(".prisma/client").$Enums.TransactionType;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
         categoryId: string | null;
-        description: string;
         updatedAt: Date;
         amountCents: bigint;
         origin: import(".prisma/client").$Enums.TransactionOrigin;
@@ -160,27 +160,27 @@ export declare class TransactionsController {
         installmentPlan: {
             id: string;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.InstallmentStatus;
+            description: string;
             userId: string;
             deletedAt: Date | null;
             categoryId: string | null;
-            description: string;
             updatedAt: Date;
             notes: string | null;
             paymentMethodId: string;
             totalAmountCents: bigint;
             installmentCount: number;
             firstReferenceMonth: string;
-            status: import(".prisma/client").$Enums.InstallmentStatus;
             purchaseDate: Date;
         } | null;
     } & {
         id: string;
         type: import(".prisma/client").$Enums.TransactionType;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
         categoryId: string | null;
-        description: string;
         updatedAt: Date;
         amountCents: bigint;
         origin: import(".prisma/client").$Enums.TransactionOrigin;
@@ -222,27 +222,27 @@ export declare class TransactionsController {
         installmentPlan: {
             id: string;
             createdAt: Date;
+            status: import(".prisma/client").$Enums.InstallmentStatus;
+            description: string;
             userId: string;
             deletedAt: Date | null;
             categoryId: string | null;
-            description: string;
             updatedAt: Date;
             notes: string | null;
             paymentMethodId: string;
             totalAmountCents: bigint;
             installmentCount: number;
             firstReferenceMonth: string;
-            status: import(".prisma/client").$Enums.InstallmentStatus;
             purchaseDate: Date;
         } | null;
     } & {
         id: string;
         type: import(".prisma/client").$Enums.TransactionType;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
         categoryId: string | null;
-        description: string;
         updatedAt: Date;
         amountCents: bigint;
         origin: import(".prisma/client").$Enums.TransactionOrigin;

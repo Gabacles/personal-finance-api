@@ -35,6 +35,7 @@ const MOCK_TAX_BREAKDOWN: TaxBreakdown = {
     taxableBasisCents: 650_940n,
     rateBps: 1500,
     deductionAppliedCents: 48_480n,
+    monthlyReductionCents: 0n,
     totalCents: 19_161n,
   },
 };

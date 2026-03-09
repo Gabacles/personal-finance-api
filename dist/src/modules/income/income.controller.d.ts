@@ -22,9 +22,9 @@ export declare class IncomeController {
     } & {
         id: string;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
-        description: string;
         employmentType: import(".prisma/client").$Enums.EmploymentType;
         updatedAt: Date;
         referenceMonth: string;
@@ -45,9 +45,9 @@ export declare class IncomeController {
     } & {
         id: string;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
-        description: string;
         employmentType: import(".prisma/client").$Enums.EmploymentType;
         updatedAt: Date;
         referenceMonth: string;
@@ -68,9 +68,9 @@ export declare class IncomeController {
     } & {
         id: string;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
-        description: string;
         employmentType: import(".prisma/client").$Enums.EmploymentType;
         updatedAt: Date;
         referenceMonth: string;
@@ -91,9 +91,9 @@ export declare class IncomeController {
     } & {
         id: string;
         createdAt: Date;
+        description: string;
         userId: string;
         deletedAt: Date | null;
-        description: string;
         employmentType: import(".prisma/client").$Enums.EmploymentType;
         updatedAt: Date;
         referenceMonth: string;

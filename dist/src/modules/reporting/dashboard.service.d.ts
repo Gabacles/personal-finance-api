@@ -10,8 +10,10 @@ export interface MonthProjection {
     projectedBalanceCents: bigint;
     breakdown: {
         installmentCents: bigint;
+        oneTimeCents: bigint;
         recurringExpenseCents: bigint;
         recurringIncomeCents: bigint;
+        committedIncomeCents: bigint;
     };
 }
 export interface Dashboard {

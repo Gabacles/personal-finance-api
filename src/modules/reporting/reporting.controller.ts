@@ -1,5 +1,13 @@
 import { Controller, Get, HttpCode, HttpStatus, Param, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiPropertyOptional,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
 import {
@@ -10,11 +18,21 @@ import { DashboardService } from './dashboard.service';
 import { SummaryService } from './summary.service';
 
 class DashboardQueryDto {
+  @ApiPropertyOptional({
+    description: 'Reference month (YYYY-MM). Defaults to current month.',
+    example: '2026-03',
+  })
   @IsOptional()
   @IsString()
   @Matches(/^\d{4}-\d{2}$/, { message: 'month must be in YYYY-MM format' })
   month?: string;
 
+  @ApiPropertyOptional({
+    description: 'How many future months to project (1-12). Defaults to 3.',
+    minimum: 1,
+    maximum: 12,
+    example: 3,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -42,6 +60,8 @@ export class ReportingController {
   @Get('summary/:month')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get aggregated financial summary for a given month (YYYY-MM)' })
+  @ApiOkResponse({ description: 'Monthly financial summary.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   getMonthSummary(
     @CurrentUser() user: AuthenticatedUser,
     @Param('month') month: string,
@@ -56,6 +76,8 @@ export class ReportingController {
   })
   @ApiQuery({ name: 'month', required: false, description: 'Reference month (YYYY-MM). Defaults to current month.' })
   @ApiQuery({ name: 'projectionMonths', required: false, description: 'How many future months to project (1–12). Defaults to 3.' })
+  @ApiOkResponse({ description: 'Dashboard with current month and projections.' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   getDashboard(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: DashboardQueryDto,

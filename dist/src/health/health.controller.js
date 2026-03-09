@@ -32,6 +32,18 @@ __decorate([
     (0, common_1.Get)(),
     (0, public_decorator_1.Public)(),
     (0, terminus_1.HealthCheck)(),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Health status for API dependencies.',
+        schema: {
+            type: 'object',
+            example: {
+                status: 'ok',
+                info: { database: { status: 'up' } },
+                error: {},
+                details: { database: { status: 'up' } },
+            },
+        },
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
