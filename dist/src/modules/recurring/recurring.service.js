@@ -146,6 +146,7 @@ let RecurringService = class RecurringService {
         if (!template)
             throw new domain_exceptions_1.EntityNotFoundException('RecurringTransaction', id);
         await this.recurringRepository.softDelete(id);
+        await this.transactionsService.softDeleteByRecurringTransactionId(id);
     }
     async computeReferenceMonth(template, month) {
         if (template.paymentMethodId &&

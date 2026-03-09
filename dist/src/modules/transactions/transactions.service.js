@@ -148,6 +148,9 @@ let TransactionsService = class TransactionsService {
         }
         await this.transactionsRepository.softDelete(id);
     }
+    async softDeleteByRecurringTransactionId(recurringTransactionId) {
+        return this.transactionsRepository.softDeleteByRecurringTransactionId(recurringTransactionId);
+    }
     async findByFilters(userId, filters, pagination) {
         return this.transactionsRepository.findByFilters(userId, filters, pagination);
     }

@@ -240,6 +240,10 @@ export class TransactionsService {
     await this.transactionsRepository.softDelete(id);
   }
 
+  async softDeleteByRecurringTransactionId(recurringTransactionId: string): Promise<number> {
+    return this.transactionsRepository.softDeleteByRecurringTransactionId(recurringTransactionId);
+  }
+
   async findByFilters(
     userId: string,
     filters: TransactionFilters,

@@ -59,6 +59,7 @@ export declare class TransactionsService {
     createDirectExpense(userId: string, dto: CreateTransactionDto): Promise<TransactionWithRelations>;
     update(id: string, userId: string, dto: UpdateTransactionDto): Promise<TransactionWithRelations>;
     remove(id: string, userId: string): Promise<void>;
+    softDeleteByRecurringTransactionId(recurringTransactionId: string): Promise<number>;
     findByFilters(userId: string, filters: TransactionFilters, pagination: PaginationDto): Promise<PaginatedResponse<TransactionWithRelations>>;
     findById(id: string, userId: string): Promise<TransactionWithRelations>;
 }

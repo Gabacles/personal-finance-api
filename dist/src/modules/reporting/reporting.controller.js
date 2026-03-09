@@ -70,7 +70,58 @@ __decorate([
     (0, common_1.Get)('summary/:month'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'Get aggregated financial summary for a given month (YYYY-MM)' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Monthly financial summary.' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Monthly financial summary.',
+        schema: {
+            type: 'object',
+            properties: {
+                month: { type: 'string', example: '2026-03' },
+                recurringGenerated: { type: 'number', example: 2 },
+                recurringSkipped: { type: 'number', example: 1 },
+                totalGrossCents: { type: 'number', example: 800000 },
+                totalNetIncomeCents: {
+                    type: 'number',
+                    example: 754044,
+                    description: 'Sum of incomeEntry.netCents (POST /income) and all RECURRING INCOME transactions generated for this month.',
+                },
+                totalDeductionCents: { type: 'number', example: 45956 },
+                totalExpenseCents: { type: 'number', example: 423500 },
+                oneTimeCents: { type: 'number', example: 250000 },
+                installmentCents: { type: 'number', example: 100000 },
+                recurringExpenseCents: { type: 'number', example: 73500 },
+                recurringIncomeCents: {
+                    type: 'number',
+                    example: 150000,
+                    description: 'Sum of RECURRING INCOME transactions generated for this month (from /recurring-transactions templates with type INCOME).',
+                },
+                balanceCents: { type: 'number', example: 330544 },
+                byCategory: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            categoryId: { type: 'string', format: 'uuid' },
+                            categoryName: { type: 'string', example: 'Alimentação' },
+                            totalCents: { type: 'number', example: 150000 },
+                        },
+                    },
+                },
+                byPaymentMethod: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            paymentMethodId: { type: 'string', format: 'uuid' },
+                            paymentMethodName: { type: 'string', example: 'Nubank' },
+                            totalCents: { type: 'number', example: 200000 },
+                        },
+                    },
+                },
+                transactions: { type: 'array', items: { type: 'object' } },
+                incomeEntry: { type: 'object', nullable: true },
+            },
+        },
+    }),
     (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Missing or invalid bearer token.' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('month')),
@@ -86,7 +137,87 @@ __decorate([
     }),
     (0, swagger_1.ApiQuery)({ name: 'month', required: false, description: 'Reference month (YYYY-MM). Defaults to current month.' }),
     (0, swagger_1.ApiQuery)({ name: 'projectionMonths', required: false, description: 'How many future months to project (1–12). Defaults to 3.' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Dashboard with current month and projections.' }),
+    (0, swagger_1.ApiOkResponse)({
+        description: 'Dashboard with current month and projections.',
+        schema: {
+            type: 'object',
+            properties: {
+                currentMonth: {
+                    type: 'object',
+                    description: 'Full MonthlySummary for the requested month — same shape as GET /summary/:month.',
+                    properties: {
+                        month: { type: 'string', example: '2026-03' },
+                        recurringGenerated: { type: 'number', example: 2 },
+                        recurringSkipped: { type: 'number', example: 0 },
+                        totalGrossCents: { type: 'number', example: 800000 },
+                        totalNetIncomeCents: {
+                            type: 'number',
+                            example: 754044,
+                            description: 'incomeEntry.netCents + recurringIncomeCents',
+                        },
+                        totalDeductionCents: { type: 'number', example: 45956 },
+                        totalExpenseCents: { type: 'number', example: 423500 },
+                        oneTimeCents: { type: 'number', example: 250000 },
+                        installmentCents: { type: 'number', example: 100000 },
+                        recurringExpenseCents: { type: 'number', example: 73500 },
+                        recurringIncomeCents: {
+                            type: 'number',
+                            example: 150000,
+                            description: 'RECURRING INCOME transactions generated for this month.',
+                        },
+                        balanceCents: { type: 'number', example: 330544 },
+                        byCategory: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    categoryId: { type: 'string', format: 'uuid' },
+                                    categoryName: { type: 'string' },
+                                    totalCents: { type: 'number' },
+                                },
+                            },
+                        },
+                        byPaymentMethod: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    paymentMethodId: { type: 'string', format: 'uuid' },
+                                    paymentMethodName: { type: 'string' },
+                                    totalCents: { type: 'number' },
+                                },
+                            },
+                        },
+                        transactions: { type: 'array', items: { type: 'object' } },
+                        incomeEntry: { type: 'object', nullable: true },
+                    },
+                },
+                projections: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            month: { type: 'string', example: '2026-04' },
+                            confidence: { type: 'string', enum: ['HIGH', 'MEDIUM', 'LOW'], example: 'HIGH' },
+                            projectedExpenseCents: { type: 'number', example: 350000 },
+                            projectedIncomeCents: { type: 'number', example: 500000 },
+                            projectedBalanceCents: { type: 'number', example: 150000 },
+                            breakdown: {
+                                type: 'object',
+                                properties: {
+                                    installmentCents: { type: 'number', example: 100000 },
+                                    oneTimeCents: { type: 'number', example: 50000 },
+                                    recurringExpenseCents: { type: 'number', example: 200000 },
+                                    recurringIncomeCents: { type: 'number', example: 300000 },
+                                    committedIncomeCents: { type: 'number', example: 200000 },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    }),
     (0, swagger_1.ApiUnauthorizedResponse)({ description: 'Missing or invalid bearer token.' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)()),

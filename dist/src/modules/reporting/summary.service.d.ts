@@ -21,6 +21,7 @@ export interface MonthlySummary {
     oneTimeCents: bigint;
     installmentCents: bigint;
     recurringExpenseCents: bigint;
+    recurringIncomeCents: bigint;
     balanceCents: bigint;
     byCategory: CategoryBreakdown[];
     byPaymentMethod: PaymentMethodBreakdown[];

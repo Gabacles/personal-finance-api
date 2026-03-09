@@ -203,6 +203,8 @@ export class RecurringService {
     const template = await this.recurringRepository.findById(id, userId);
     if (!template) throw new EntityNotFoundException('RecurringTransaction', id);
     await this.recurringRepository.softDelete(id);
+    // Cascade: soft-delete all transactions that were generated from this template
+    await this.transactionsService.softDeleteByRecurringTransactionId(id);
   }
 
   // ---------------------------------------------------------------------------

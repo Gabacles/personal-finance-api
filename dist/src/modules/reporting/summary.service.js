@@ -48,8 +48,12 @@ let SummaryService = class SummaryService {
             .filter((t) => t.origin === client_1.TransactionOrigin.RECURRING)
             .reduce((s, t) => s + t.amountCents, 0n);
         const totalGrossCents = incomeEntry?.grossCents ?? 0n;
-        const totalNetIncomeCents = incomeEntry?.netCents ?? 0n;
         const totalDeductionCents = (incomeEntry?.deductions ?? []).reduce((s, d) => s + d.amountCents, 0n);
+        const recurringIncomeCents = transactions
+            .filter((t) => t.type === client_1.TransactionType.INCOME &&
+            t.origin === client_1.TransactionOrigin.RECURRING)
+            .reduce((s, t) => s + t.amountCents, 0n);
+        const totalNetIncomeCents = (incomeEntry?.netCents ?? 0n) + recurringIncomeCents;
         const categoryMap = new Map();
         for (const t of expenseTransactions) {
             if (t.categoryId && t.category) {
@@ -89,6 +93,7 @@ let SummaryService = class SummaryService {
             oneTimeCents,
             installmentCents,
             recurringExpenseCents,
+            recurringIncomeCents,
             balanceCents: totalNetIncomeCents - totalExpenseCents,
             byCategory: Array.from(categoryMap.values()),
             byPaymentMethod: Array.from(pmMap.values()),

@@ -28,6 +28,8 @@ export interface MonthlySummary {
   oneTimeCents: bigint;
   installmentCents: bigint;
   recurringExpenseCents: bigint;
+  // Recurring income (generated from templates)
+  recurringIncomeCents: bigint;
   // Balance
   balanceCents: bigint;
   // Breakdowns
@@ -88,11 +90,21 @@ export class SummaryService {
 
     // 4. Income totals
     const totalGrossCents = incomeEntry?.grossCents ?? 0n;
-    const totalNetIncomeCents = incomeEntry?.netCents ?? 0n;
     const totalDeductionCents = (incomeEntry?.deductions ?? []).reduce(
       (s: bigint, d: { amountCents: bigint }) => s + d.amountCents,
       0n,
     );
+
+    // Recurring income transactions generated for this month
+    const recurringIncomeCents = transactions
+      .filter(
+        (t) =>
+          t.type === TransactionType.INCOME &&
+          t.origin === TransactionOrigin.RECURRING,
+      )
+      .reduce((s, t) => s + t.amountCents, 0n);
+
+    const totalNetIncomeCents = (incomeEntry?.netCents ?? 0n) + recurringIncomeCents;
 
     // 5. By category (expenses only)
     const categoryMap = new Map<string, CategoryBreakdown>();
@@ -137,6 +149,7 @@ export class SummaryService {
       oneTimeCents,
       installmentCents,
       recurringExpenseCents,
+      recurringIncomeCents,
       balanceCents: totalNetIncomeCents - totalExpenseCents,
       byCategory: Array.from(categoryMap.values()),
       byPaymentMethod: Array.from(pmMap.values()),

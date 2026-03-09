@@ -116,6 +116,14 @@ export class TransactionsRepository {
     });
   }
 
+  async softDeleteByRecurringTransactionId(recurringTransactionId: string): Promise<number> {
+    const result = await this.prisma.transaction.updateMany({
+      where: { recurringTransactionId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return result.count;
+  }
+
   async findByRecurringAndMonth(
     recurringId: string,
     month: string,

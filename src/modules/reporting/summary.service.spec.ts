@@ -77,6 +77,7 @@ describe('SummaryService', () => {
       expect(result.oneTimeCents).toBe(0n);
       expect(result.installmentCents).toBe(0n);
       expect(result.recurringExpenseCents).toBe(0n);
+      expect(result.recurringIncomeCents).toBe(0n);
       expect(result.balanceCents).toBe(0n);
       expect(result.byCategory).toEqual([]);
       expect(result.byPaymentMethod).toEqual([]);
@@ -193,6 +194,57 @@ describe('SummaryService', () => {
       expect(result.byPaymentMethod).toHaveLength(1);
       expect(result.byPaymentMethod[0].paymentMethodId).toBe('pm-1');
       expect(result.byPaymentMethod[0].totalCents).toBe(5000n);
+    });
+
+    it('RECURRING INCOME transactions are included in totalNetIncomeCents and balanceCents', async () => {
+      prismaMock.transaction.findMany.mockResolvedValue([
+        {
+          type: TransactionType.INCOME,
+          origin: TransactionOrigin.RECURRING,
+          amountCents: 150000n,
+          categoryId: null,
+          paymentMethodId: null,
+          category: null,
+          paymentMethod: null,
+          installmentPlan: null,
+        },
+        makeExpenseTx(50000n, TransactionOrigin.ONE_TIME),
+      ]);
+      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+
+      const result = await service.getForMonth(USER_ID, MONTH);
+
+      expect(result.recurringIncomeCents).toBe(150000n);
+      expect(result.totalNetIncomeCents).toBe(150000n);
+      expect(result.totalExpenseCents).toBe(50000n);
+      expect(result.balanceCents).toBe(100000n);
+    });
+
+    it('RECURRING INCOME is combined with incomeEntry netCents in totalNetIncomeCents', async () => {
+      prismaMock.transaction.findMany.mockResolvedValue([
+        {
+          type: TransactionType.INCOME,
+          origin: TransactionOrigin.RECURRING,
+          amountCents: 200000n,
+          categoryId: null,
+          paymentMethodId: null,
+          category: null,
+          paymentMethod: null,
+          installmentPlan: null,
+        },
+      ]);
+      prismaMock.incomeEntry.findFirst.mockResolvedValue({
+        grossCents: 600000n,
+        netCents: 500000n,
+        deductions: [{ amountCents: 100000n }],
+      });
+
+      const result = await service.getForMonth(USER_ID, MONTH);
+
+      expect(result.recurringIncomeCents).toBe(200000n);
+      expect(result.totalNetIncomeCents).toBe(700000n); // 500000 + 200000
+      expect(result.totalGrossCents).toBe(600000n);
+      expect(result.balanceCents).toBe(700000n);
     });
 
     it('INCOME-type transactions are not counted in expense totals', async () => {
