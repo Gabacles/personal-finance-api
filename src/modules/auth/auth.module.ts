@@ -4,7 +4,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import type { StringValue } from 'ms';
-import { CategoriesModule } from '../categories/categories.module';
 import { UsersModule } from '../users/users.module';
 import { UsersRepository } from '../users/users.repository';
 import { AuthController } from './auth.controller';
@@ -25,7 +24,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       }),
     }),
     UsersModule,
-    CategoriesModule,
   ],
   controllers: [AuthController],
   providers: [

@@ -25,9 +25,9 @@ export declare class PaymentMethodsController {
         type: import(".prisma/client").$Enums.PaymentMethodType;
         createdAt: Date;
         name: string;
-        userId: string;
-        deletedAt: Date | null;
         updatedAt: Date;
+        deletedAt: Date | null;
+        userId: string;
     }>;
     findAll(user: AuthenticatedUser, query: PaymentMethodsFilterDto): Promise<({
         creditCard: {
@@ -42,9 +42,9 @@ export declare class PaymentMethodsController {
         type: import(".prisma/client").$Enums.PaymentMethodType;
         createdAt: Date;
         name: string;
-        userId: string;
-        deletedAt: Date | null;
         updatedAt: Date;
+        deletedAt: Date | null;
+        userId: string;
     })[]>;
     findOne(user: AuthenticatedUser, id: string): Promise<{
         creditCard: {
@@ -59,9 +59,9 @@ export declare class PaymentMethodsController {
         type: import(".prisma/client").$Enums.PaymentMethodType;
         createdAt: Date;
         name: string;
-        userId: string;
-        deletedAt: Date | null;
         updatedAt: Date;
+        deletedAt: Date | null;
+        userId: string;
     }>;
     update(user: AuthenticatedUser, id: string, dto: UpdatePaymentMethodDto): Promise<{
         creditCard: {
@@ -76,9 +76,9 @@ export declare class PaymentMethodsController {
         type: import(".prisma/client").$Enums.PaymentMethodType;
         createdAt: Date;
         name: string;
-        userId: string;
-        deletedAt: Date | null;
         updatedAt: Date;
+        deletedAt: Date | null;
+        userId: string;
     }>;
     remove(user: AuthenticatedUser, id: string): Promise<void>;
     getStatement(user: AuthenticatedUser, id: string, query: StatementQueryDto): Promise<{
@@ -95,21 +95,21 @@ export declare class PaymentMethodsController {
             type: import(".prisma/client").$Enums.PaymentMethodType;
             createdAt: Date;
             name: string;
-            userId: string;
-            deletedAt: Date | null;
             updatedAt: Date;
+            deletedAt: Date | null;
+            userId: string;
         };
         referenceMonth: string;
         totalCents: bigint;
         transactions: ({
             category: {
+                isSystem: boolean;
                 id: string;
                 type: import(".prisma/client").$Enums.TransactionType;
                 createdAt: Date;
                 name: string;
-                userId: string | null;
-                isSystem: boolean;
                 deletedAt: Date | null;
+                userId: string | null;
             } | null;
             paymentMethod: ({
                 creditCard: {
@@ -124,20 +124,20 @@ export declare class PaymentMethodsController {
                 type: import(".prisma/client").$Enums.PaymentMethodType;
                 createdAt: Date;
                 name: string;
-                userId: string;
-                deletedAt: Date | null;
                 updatedAt: Date;
+                deletedAt: Date | null;
+                userId: string;
             }) | null;
             installmentPlan: {
                 id: string;
                 createdAt: Date;
                 status: import(".prisma/client").$Enums.InstallmentStatus;
                 description: string;
-                userId: string;
-                deletedAt: Date | null;
-                categoryId: string | null;
                 updatedAt: Date;
+                deletedAt: Date | null;
+                userId: string;
                 notes: string | null;
+                categoryId: string | null;
                 paymentMethodId: string;
                 totalAmountCents: bigint;
                 installmentCount: number;
@@ -149,15 +149,15 @@ export declare class PaymentMethodsController {
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
             description: string;
-            userId: string;
-            deletedAt: Date | null;
-            categoryId: string | null;
             updatedAt: Date;
+            deletedAt: Date | null;
+            userId: string;
             amountCents: bigint;
             origin: import(".prisma/client").$Enums.TransactionOrigin;
             referenceMonth: string;
             transactionDate: Date;
             notes: string | null;
+            categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;

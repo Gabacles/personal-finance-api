@@ -1,9 +1,8 @@
-import { Category, Prisma, TransactionType } from '@prisma/client';
+import { Category, TransactionType } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
 export declare class CategoriesRepository {
     private readonly prisma;
     constructor(prisma: PrismaService);
-    createMany(data: Prisma.CategoryCreateManyInput[]): Promise<void>;
     createUserCategory(data: {
         userId: string;
         name: string;

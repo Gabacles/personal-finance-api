@@ -5,7 +5,6 @@ import {
   BusinessRuleException,
   EntityNotFoundException,
 } from '../../shared/exceptions/domain.exceptions';
-import { CategoriesService } from '../categories/categories.service';
 import { LoginDto, RegisterDto } from '../users/dto/user.dto';
 import { UsersService } from '../users/users.service';
 import { UsersRepository } from '../users/users.repository';
@@ -23,7 +22,6 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
-    private readonly categoriesService: CategoriesService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthTokenResponse> {
@@ -43,8 +41,6 @@ export class AuthService {
       passwordHash,
       employmentType: dto.employmentType,
     });
-
-    await this.categoriesService.seedSystemCategories(user.id);
 
     return this.buildTokenResponse(user.id, user.name, user.email);
   }

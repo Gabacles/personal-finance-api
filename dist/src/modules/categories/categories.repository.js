@@ -16,9 +16,6 @@ let CategoriesRepository = class CategoriesRepository {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async createMany(data) {
-        await this.prisma.category.createMany({ data });
-    }
     async createUserCategory(data) {
         return this.prisma.category.create({
             data: { ...data, isSystem: false },

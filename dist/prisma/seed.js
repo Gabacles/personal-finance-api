@@ -2,7 +2,38 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
+const SYSTEM_CATEGORIES = [
+    { name: 'Alimentação', type: client_1.TransactionType.EXPENSE },
+    { name: 'Transporte', type: client_1.TransactionType.EXPENSE },
+    { name: 'Moradia', type: client_1.TransactionType.EXPENSE },
+    { name: 'Saúde', type: client_1.TransactionType.EXPENSE },
+    { name: 'Educação', type: client_1.TransactionType.EXPENSE },
+    { name: 'Lazer', type: client_1.TransactionType.EXPENSE },
+    { name: 'Vestuário', type: client_1.TransactionType.EXPENSE },
+    { name: 'Assinaturas', type: client_1.TransactionType.EXPENSE },
+    { name: 'Outros (despesa)', type: client_1.TransactionType.EXPENSE },
+    { name: 'Salário', type: client_1.TransactionType.INCOME },
+    { name: 'Freelance', type: client_1.TransactionType.INCOME },
+    { name: 'Investimentos', type: client_1.TransactionType.INCOME },
+    { name: 'Outros (receita)', type: client_1.TransactionType.INCOME },
+];
 async function main() {
+    console.log('Seeding system categories...');
+    const existingCount = await prisma.category.count({ where: { isSystem: true } });
+    if (existingCount === 0) {
+        await prisma.category.createMany({
+            data: SYSTEM_CATEGORIES.map((c) => ({
+                userId: null,
+                name: c.name,
+                type: c.type,
+                isSystem: true,
+            })),
+        });
+        console.log(`Created ${SYSTEM_CATEGORIES.length} global system categories.`);
+    }
+    else {
+        console.log(`System categories already present (${existingCount}). Skipping.`);
+    }
     console.log('Seeding deduction tables (2026)...');
     const inssBrackets2026 = [
         { upToCents: 162_100, rateBps: 750 },

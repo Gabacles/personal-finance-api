@@ -12,7 +12,6 @@ const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
 const jwt_1 = require("@nestjs/jwt");
 const passport_1 = require("@nestjs/passport");
-const categories_module_1 = require("../categories/categories.module");
 const users_module_1 = require("../users/users.module");
 const users_repository_1 = require("../users/users.repository");
 const auth_controller_1 = require("./auth.controller");
@@ -36,7 +35,6 @@ exports.AuthModule = AuthModule = __decorate([
                 }),
             }),
             users_module_1.UsersModule,
-            categories_module_1.CategoriesModule,
         ],
         controllers: [auth_controller_1.AuthController],
         providers: [

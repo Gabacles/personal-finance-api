@@ -47,15 +47,13 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const argon2 = __importStar(require("argon2"));
 const domain_exceptions_1 = require("../../shared/exceptions/domain.exceptions");
-const categories_service_1 = require("../categories/categories.service");
 const users_service_1 = require("../users/users.service");
 const users_repository_1 = require("../users/users.repository");
 let AuthService = class AuthService {
-    constructor(usersService, usersRepository, jwtService, categoriesService) {
+    constructor(usersService, usersRepository, jwtService) {
         this.usersService = usersService;
         this.usersRepository = usersRepository;
         this.jwtService = jwtService;
-        this.categoriesService = categoriesService;
     }
     async register(dto) {
         const existing = await this.usersRepository.findByEmail(dto.email);
@@ -69,7 +67,6 @@ let AuthService = class AuthService {
             passwordHash,
             employmentType: dto.employmentType,
         });
-        await this.categoriesService.seedSystemCategories(user.id);
         return this.buildTokenResponse(user.id, user.name, user.email);
     }
     async login(dto) {
@@ -99,7 +96,6 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [users_service_1.UsersService,
         users_repository_1.UsersRepository,
-        jwt_1.JwtService,
-        categories_service_1.CategoriesService])
+        jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

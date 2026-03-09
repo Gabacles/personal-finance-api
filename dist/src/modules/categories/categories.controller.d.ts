@@ -10,31 +10,31 @@ export declare class CategoriesController {
     private readonly categoriesService;
     constructor(categoriesService: CategoriesService);
     create(user: AuthenticatedUser, dto: CreateCategoryDto): Promise<{
+        isSystem: boolean;
         id: string;
         type: import(".prisma/client").$Enums.TransactionType;
         createdAt: Date;
         name: string;
-        userId: string | null;
-        isSystem: boolean;
         deletedAt: Date | null;
+        userId: string | null;
     }>;
     findAll(user: AuthenticatedUser, query: CategoriesFilterDto): Promise<{
+        isSystem: boolean;
         id: string;
         type: import(".prisma/client").$Enums.TransactionType;
         createdAt: Date;
         name: string;
-        userId: string | null;
-        isSystem: boolean;
         deletedAt: Date | null;
+        userId: string | null;
     }[]>;
     update(user: AuthenticatedUser, id: string, dto: UpdateCategoryDto): Promise<{
+        isSystem: boolean;
         id: string;
         type: import(".prisma/client").$Enums.TransactionType;
         createdAt: Date;
         name: string;
-        userId: string | null;
-        isSystem: boolean;
         deletedAt: Date | null;
+        userId: string | null;
     }>;
     remove(user: AuthenticatedUser, id: string): Promise<void>;
 }

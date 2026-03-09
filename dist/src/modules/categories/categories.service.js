@@ -11,35 +11,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CategoriesService = void 0;
 const common_1 = require("@nestjs/common");
-const client_1 = require("@prisma/client");
 const domain_exceptions_1 = require("../../shared/exceptions/domain.exceptions");
 const categories_repository_1 = require("./categories.repository");
-const SYSTEM_CATEGORIES = [
-    { name: 'Alimentação', type: client_1.TransactionType.EXPENSE },
-    { name: 'Transporte', type: client_1.TransactionType.EXPENSE },
-    { name: 'Moradia', type: client_1.TransactionType.EXPENSE },
-    { name: 'Saúde', type: client_1.TransactionType.EXPENSE },
-    { name: 'Educação', type: client_1.TransactionType.EXPENSE },
-    { name: 'Lazer', type: client_1.TransactionType.EXPENSE },
-    { name: 'Vestuário', type: client_1.TransactionType.EXPENSE },
-    { name: 'Assinaturas', type: client_1.TransactionType.EXPENSE },
-    { name: 'Outros (despesa)', type: client_1.TransactionType.EXPENSE },
-    { name: 'Salário', type: client_1.TransactionType.INCOME },
-    { name: 'Freelance', type: client_1.TransactionType.INCOME },
-    { name: 'Investimentos', type: client_1.TransactionType.INCOME },
-    { name: 'Outros (receita)', type: client_1.TransactionType.INCOME },
-];
 let CategoriesService = class CategoriesService {
     constructor(categoriesRepository) {
         this.categoriesRepository = categoriesRepository;
-    }
-    async seedSystemCategories(userId) {
-        await this.categoriesRepository.createMany(SYSTEM_CATEGORIES.map((c) => ({
-            userId,
-            name: c.name,
-            type: c.type,
-            isSystem: true,
-        })));
     }
     async findAll(userId, type) {
         return this.categoriesRepository.findAllForUser(userId, type);

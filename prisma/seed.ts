@@ -1,8 +1,40 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, TransactionType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const SYSTEM_CATEGORIES: Array<{ name: string; type: TransactionType }> = [
+  { name: 'Alimentação', type: TransactionType.EXPENSE },
+  { name: 'Transporte', type: TransactionType.EXPENSE },
+  { name: 'Moradia', type: TransactionType.EXPENSE },
+  { name: 'Saúde', type: TransactionType.EXPENSE },
+  { name: 'Educação', type: TransactionType.EXPENSE },
+  { name: 'Lazer', type: TransactionType.EXPENSE },
+  { name: 'Vestuário', type: TransactionType.EXPENSE },
+  { name: 'Assinaturas', type: TransactionType.EXPENSE },
+  { name: 'Outros (despesa)', type: TransactionType.EXPENSE },
+  { name: 'Salário', type: TransactionType.INCOME },
+  { name: 'Freelance', type: TransactionType.INCOME },
+  { name: 'Investimentos', type: TransactionType.INCOME },
+  { name: 'Outros (receita)', type: TransactionType.INCOME },
+];
+
 async function main(): Promise<void> {
+  console.log('Seeding system categories...');
+  const existingCount = await prisma.category.count({ where: { isSystem: true } });
+  if (existingCount === 0) {
+    await prisma.category.createMany({
+      data: SYSTEM_CATEGORIES.map((c) => ({
+        userId: null,
+        name: c.name,
+        type: c.type,
+        isSystem: true,
+      })),
+    });
+    console.log(`Created ${SYSTEM_CATEGORIES.length} global system categories.`);
+  } else {
+    console.log(`System categories already present (${existingCount}). Skipping.`);
+  }
+
   console.log('Seeding deduction tables (2026)...');
 
   // INSS 2026 — progressive brackets (cumulative method)

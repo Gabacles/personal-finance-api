@@ -7,37 +7,37 @@ export declare class InstallmentsController {
     create(user: AuthenticatedUser, dto: CreateInstallmentPlanDto): Promise<{
         transactions: ({
             category: {
+                isSystem: boolean;
                 id: string;
                 type: import(".prisma/client").$Enums.TransactionType;
                 createdAt: Date;
                 name: string;
-                userId: string | null;
-                isSystem: boolean;
                 deletedAt: Date | null;
+                userId: string | null;
             } | null;
             paymentMethod: {
                 id: string;
                 type: import(".prisma/client").$Enums.PaymentMethodType;
                 createdAt: Date;
                 name: string;
-                userId: string;
-                deletedAt: Date | null;
                 updatedAt: Date;
+                deletedAt: Date | null;
+                userId: string;
             } | null;
         } & {
             id: string;
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
             description: string;
-            userId: string;
-            deletedAt: Date | null;
-            categoryId: string | null;
             updatedAt: Date;
+            deletedAt: Date | null;
+            userId: string;
             amountCents: bigint;
             origin: import(".prisma/client").$Enums.TransactionOrigin;
             referenceMonth: string;
             transactionDate: Date;
             notes: string | null;
+            categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;
@@ -48,11 +48,11 @@ export declare class InstallmentsController {
         createdAt: Date;
         status: import(".prisma/client").$Enums.InstallmentStatus;
         description: string;
-        userId: string;
-        deletedAt: Date | null;
-        categoryId: string | null;
         updatedAt: Date;
+        deletedAt: Date | null;
+        userId: string;
         notes: string | null;
+        categoryId: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
@@ -62,37 +62,37 @@ export declare class InstallmentsController {
     findAll(user: AuthenticatedUser): Promise<({
         transactions: ({
             category: {
+                isSystem: boolean;
                 id: string;
                 type: import(".prisma/client").$Enums.TransactionType;
                 createdAt: Date;
                 name: string;
-                userId: string | null;
-                isSystem: boolean;
                 deletedAt: Date | null;
+                userId: string | null;
             } | null;
             paymentMethod: {
                 id: string;
                 type: import(".prisma/client").$Enums.PaymentMethodType;
                 createdAt: Date;
                 name: string;
-                userId: string;
-                deletedAt: Date | null;
                 updatedAt: Date;
+                deletedAt: Date | null;
+                userId: string;
             } | null;
         } & {
             id: string;
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
             description: string;
-            userId: string;
-            deletedAt: Date | null;
-            categoryId: string | null;
             updatedAt: Date;
+            deletedAt: Date | null;
+            userId: string;
             amountCents: bigint;
             origin: import(".prisma/client").$Enums.TransactionOrigin;
             referenceMonth: string;
             transactionDate: Date;
             notes: string | null;
+            categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;
@@ -103,11 +103,11 @@ export declare class InstallmentsController {
         createdAt: Date;
         status: import(".prisma/client").$Enums.InstallmentStatus;
         description: string;
-        userId: string;
-        deletedAt: Date | null;
-        categoryId: string | null;
         updatedAt: Date;
+        deletedAt: Date | null;
+        userId: string;
         notes: string | null;
+        categoryId: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;
@@ -117,37 +117,37 @@ export declare class InstallmentsController {
     findOne(user: AuthenticatedUser, id: string): Promise<{
         transactions: ({
             category: {
+                isSystem: boolean;
                 id: string;
                 type: import(".prisma/client").$Enums.TransactionType;
                 createdAt: Date;
                 name: string;
-                userId: string | null;
-                isSystem: boolean;
                 deletedAt: Date | null;
+                userId: string | null;
             } | null;
             paymentMethod: {
                 id: string;
                 type: import(".prisma/client").$Enums.PaymentMethodType;
                 createdAt: Date;
                 name: string;
-                userId: string;
-                deletedAt: Date | null;
                 updatedAt: Date;
+                deletedAt: Date | null;
+                userId: string;
             } | null;
         } & {
             id: string;
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
             description: string;
-            userId: string;
-            deletedAt: Date | null;
-            categoryId: string | null;
             updatedAt: Date;
+            deletedAt: Date | null;
+            userId: string;
             amountCents: bigint;
             origin: import(".prisma/client").$Enums.TransactionOrigin;
             referenceMonth: string;
             transactionDate: Date;
             notes: string | null;
+            categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;
@@ -158,11 +158,11 @@ export declare class InstallmentsController {
         createdAt: Date;
         status: import(".prisma/client").$Enums.InstallmentStatus;
         description: string;
-        userId: string;
-        deletedAt: Date | null;
-        categoryId: string | null;
         updatedAt: Date;
+        deletedAt: Date | null;
+        userId: string;
         notes: string | null;
+        categoryId: string | null;
         paymentMethodId: string;
         totalAmountCents: bigint;
         installmentCount: number;

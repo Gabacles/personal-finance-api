@@ -16,8 +16,8 @@ export declare class BudgetController {
     } & {
         id: string;
         createdAt: Date;
-        userId: string;
         updatedAt: Date;
+        userId: string;
         referenceMonth: string;
         totalBudgetCents: bigint;
     }>;
@@ -32,8 +32,8 @@ export declare class BudgetController {
     } & {
         id: string;
         createdAt: Date;
-        userId: string;
         updatedAt: Date;
+        userId: string;
         referenceMonth: string;
         totalBudgetCents: bigint;
     })[]>;
@@ -48,8 +48,8 @@ export declare class BudgetController {
     } & {
         id: string;
         createdAt: Date;
-        userId: string;
         updatedAt: Date;
+        userId: string;
         referenceMonth: string;
         totalBudgetCents: bigint;
     }>;
@@ -64,8 +64,8 @@ export declare class BudgetController {
     } & {
         id: string;
         createdAt: Date;
-        userId: string;
         updatedAt: Date;
+        userId: string;
         referenceMonth: string;
         totalBudgetCents: bigint;
     }>;
