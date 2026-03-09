@@ -14,8 +14,10 @@ export interface MonthProjection {
   projectedBalanceCents: bigint;
   breakdown: {
     installmentCents: bigint;
+    oneTimeCents: bigint;
     recurringExpenseCents: bigint;
     recurringIncomeCents: bigint;
+    committedIncomeCents: bigint;
   };
 }
 
@@ -53,26 +55,45 @@ export class DashboardService {
         const confidence: ConfidenceLevel =
           i === 0 ? 'HIGH' : i <= 2 ? 'MEDIUM' : 'LOW';
 
-        // Already-committed installment transactions for this month
-        const installmentTxns = await this.prisma.transaction.findMany({
-          where: {
-            userId,
-            referenceMonth: futureMonth,
-            origin: TransactionOrigin.INSTALLMENT,
-            deletedAt: null,
-          },
-          select: { amountCents: true },
-        });
+        // Already-committed transactions and active templates for this month
+        const [installmentTxns, oneTimeTxns, activeTemplates, committedIncomeEntry] =
+          await Promise.all([
+            this.prisma.transaction.findMany({
+              where: {
+                userId,
+                referenceMonth: futureMonth,
+                origin: TransactionOrigin.INSTALLMENT,
+                deletedAt: null,
+              },
+              select: { amountCents: true },
+            }),
+            this.prisma.transaction.findMany({
+              where: {
+                userId,
+                referenceMonth: futureMonth,
+                origin: TransactionOrigin.ONE_TIME,
+                type: TransactionType.EXPENSE,
+                deletedAt: null,
+              },
+              select: { amountCents: true },
+            }),
+            this.recurringService.findActiveForMonth(userId, futureMonth),
+            this.prisma.incomeEntry.findFirst({
+              where: { userId, referenceMonth: futureMonth, deletedAt: null },
+              select: { netCents: true },
+            }),
+          ]);
+
         const installmentCents = installmentTxns.reduce(
+          (s, t) => s + t.amountCents,
+          0n,
+        );
+        const oneTimeCents = oneTimeTxns.reduce(
           (s, t) => s + t.amountCents,
           0n,
         );
 
         // Active recurring templates for this month
-        const activeTemplates = await this.recurringService.findActiveForMonth(
-          userId,
-          futureMonth,
-        );
         const recurringExpenseCents = activeTemplates
           .filter((t) => t.type === TransactionType.EXPENSE)
           .reduce((s, t) => s + t.amountCents, 0n);
@@ -80,8 +101,12 @@ export class DashboardService {
           .filter((t) => t.type === TransactionType.INCOME)
           .reduce((s, t) => s + t.amountCents, 0n);
 
-        const projectedExpenseCents = installmentCents + recurringExpenseCents;
-        const projectedIncomeCents = recurringIncomeCents;
+        // Already-registered income entry for this future month
+        const committedIncomeCents = committedIncomeEntry?.netCents ?? 0n;
+
+        const projectedExpenseCents = installmentCents + oneTimeCents + recurringExpenseCents;
+        const projectedIncomeCents =
+          recurringIncomeCents + committedIncomeCents;
 
         return {
           month: futureMonth,
@@ -91,8 +116,10 @@ export class DashboardService {
           projectedBalanceCents: projectedIncomeCents - projectedExpenseCents,
           breakdown: {
             installmentCents,
+            oneTimeCents,
             recurringExpenseCents,
             recurringIncomeCents,
+            committedIncomeCents,
           },
         };
       }),

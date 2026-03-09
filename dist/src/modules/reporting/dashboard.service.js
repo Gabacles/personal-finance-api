@@ -33,25 +33,43 @@ let DashboardService = class DashboardService {
         const projections = await Promise.all(Array.from({ length: projectionMonths }, async (_, i) => {
             const futureMonth = addMonths(month, i + 1);
             const confidence = i === 0 ? 'HIGH' : i <= 2 ? 'MEDIUM' : 'LOW';
-            const installmentTxns = await this.prisma.transaction.findMany({
-                where: {
-                    userId,
-                    referenceMonth: futureMonth,
-                    origin: client_1.TransactionOrigin.INSTALLMENT,
-                    deletedAt: null,
-                },
-                select: { amountCents: true },
-            });
+            const [installmentTxns, oneTimeTxns, activeTemplates, committedIncomeEntry] = await Promise.all([
+                this.prisma.transaction.findMany({
+                    where: {
+                        userId,
+                        referenceMonth: futureMonth,
+                        origin: client_1.TransactionOrigin.INSTALLMENT,
+                        deletedAt: null,
+                    },
+                    select: { amountCents: true },
+                }),
+                this.prisma.transaction.findMany({
+                    where: {
+                        userId,
+                        referenceMonth: futureMonth,
+                        origin: client_1.TransactionOrigin.ONE_TIME,
+                        type: client_1.TransactionType.EXPENSE,
+                        deletedAt: null,
+                    },
+                    select: { amountCents: true },
+                }),
+                this.recurringService.findActiveForMonth(userId, futureMonth),
+                this.prisma.incomeEntry.findFirst({
+                    where: { userId, referenceMonth: futureMonth, deletedAt: null },
+                    select: { netCents: true },
+                }),
+            ]);
             const installmentCents = installmentTxns.reduce((s, t) => s + t.amountCents, 0n);
-            const activeTemplates = await this.recurringService.findActiveForMonth(userId, futureMonth);
+            const oneTimeCents = oneTimeTxns.reduce((s, t) => s + t.amountCents, 0n);
             const recurringExpenseCents = activeTemplates
                 .filter((t) => t.type === client_1.TransactionType.EXPENSE)
                 .reduce((s, t) => s + t.amountCents, 0n);
             const recurringIncomeCents = activeTemplates
                 .filter((t) => t.type === client_1.TransactionType.INCOME)
                 .reduce((s, t) => s + t.amountCents, 0n);
-            const projectedExpenseCents = installmentCents + recurringExpenseCents;
-            const projectedIncomeCents = recurringIncomeCents;
+            const committedIncomeCents = committedIncomeEntry?.netCents ?? 0n;
+            const projectedExpenseCents = installmentCents + oneTimeCents + recurringExpenseCents;
+            const projectedIncomeCents = recurringIncomeCents + committedIncomeCents;
             return {
                 month: futureMonth,
                 confidence,
@@ -60,8 +78,10 @@ let DashboardService = class DashboardService {
                 projectedBalanceCents: projectedIncomeCents - projectedExpenseCents,
                 breakdown: {
                     installmentCents,
+                    oneTimeCents,
                     recurringExpenseCents,
                     recurringIncomeCents,
+                    committedIncomeCents,
                 },
             };
         }));

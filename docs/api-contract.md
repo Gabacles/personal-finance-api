@@ -1029,39 +1029,45 @@ Returns the current month summary and a forward projection. The primary entry po
     },
     "projection": [
       {
-        "reference_month": "2026-04",
-        "projected_income_cents": 800000,
-        "projected_expenses": {
-          "open_installments_cents": 250000,
-          "recurring_charges_cents": 73500,
-          "total_cents": 323500
-        },
-        "projected_balance_cents": 476500,
-        "confidence": "HIGH"
+        "month": "2026-04",
+        "confidence": "HIGH",
+        "projectedExpenseCents": 323500,
+        "projectedIncomeCents": 604044,
+        "projectedBalanceCents": 280544,
+        "breakdown": {
+          "installmentCents": 250000,
+          "oneTimeCents": 0,
+          "recurringExpenseCents": 73500,
+          "recurringIncomeCents": 0,
+          "committedIncomeCents": 604044
+        }
       },
       {
-        "reference_month": "2026-05",
-        "projected_income_cents": 800000,
-        "projected_expenses": {
-          "open_installments_cents": 200000,
-          "recurring_charges_cents": 73500,
-          "total_cents": 273500
-        },
-        "projected_balance_cents": 526500,
-        "confidence": "MEDIUM"
+        "month": "2026-05",
+        "confidence": "MEDIUM",
+        "projectedExpenseCents": 273500,
+        "projectedIncomeCents": 0,
+        "projectedBalanceCents": -273500,
+        "breakdown": {
+          "installmentCents": 200000,
+          "oneTimeCents": 0,
+          "recurringExpenseCents": 73500,
+          "recurringIncomeCents": 0,
+          "committedIncomeCents": 0
+        }
       }
     ],
     "meta": {
       "generated_at": "2026-03-07T14:30:00Z",
-      "projection_basis": "Active recurring transactions and open installment plans. One-time future expenses are not included."
+      "projection_basis": "Open installment plans, already-registered one-time expenses, active recurring templates, and income entries already registered for future months."
     }
   }
 }
 ```
 
 **Confidence levels:**
-- `HIGH` — Next month: high certainty (recurring income + confirmed installments)
-- `MEDIUM` — 2–3 months ahead: assumes recurrings continue, no additional income confirmed
+- `HIGH` — Next month: high certainty (confirmed installments + any registered income entry + active recurrings)
+- `MEDIUM` — 2–3 months ahead: assumes recurrings continue; income projected only if already registered
 - `LOW` — 4+ months (v1.1)
 
 **Status codes:** `200` · `400` Invalid month format
