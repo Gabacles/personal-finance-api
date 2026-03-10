@@ -12,11 +12,13 @@ const credit_card_repository_1 = require("./credit-card.repository");
 const payment_methods_controller_1 = require("./payment-methods.controller");
 const payment_methods_repository_1 = require("./payment-methods.repository");
 const payment_methods_service_1 = require("./payment-methods.service");
+const recurring_module_1 = require("../recurring/recurring.module");
 let PaymentMethodsModule = class PaymentMethodsModule {
 };
 exports.PaymentMethodsModule = PaymentMethodsModule;
 exports.PaymentMethodsModule = PaymentMethodsModule = __decorate([
     (0, common_1.Module)({
+        imports: [(0, common_1.forwardRef)(() => recurring_module_1.RecurringModule)],
         controllers: [payment_methods_controller_1.PaymentMethodsController],
         providers: [
             payment_methods_service_1.PaymentMethodsService,

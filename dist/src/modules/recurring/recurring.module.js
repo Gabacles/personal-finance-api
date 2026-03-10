@@ -21,7 +21,7 @@ let RecurringModule = class RecurringModule {
 exports.RecurringModule = RecurringModule;
 exports.RecurringModule = RecurringModule = __decorate([
     (0, common_1.Module)({
-        imports: [payment_methods_module_1.PaymentMethodsModule, categories_module_1.CategoriesModule, transactions_module_1.TransactionsModule, users_module_1.UsersModule],
+        imports: [(0, common_1.forwardRef)(() => payment_methods_module_1.PaymentMethodsModule), categories_module_1.CategoriesModule, transactions_module_1.TransactionsModule, users_module_1.UsersModule],
         controllers: [recurring_controller_1.RecurringController],
         providers: [recurring_service_1.RecurringService, recurring_repository_1.RecurringRepository, tax_calculator_service_1.TaxCalculatorService],
         exports: [recurring_service_1.RecurringService],

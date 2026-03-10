@@ -3,10 +3,12 @@ import { PrismaService } from '../../shared/database/prisma.service';
 import { CreatePaymentMethodDto } from './dto/create-payment-method.dto';
 import { UpdatePaymentMethodDto } from './dto/update-payment-method.dto';
 import { PaymentMethodWithCard, PaymentMethodsRepository } from './payment-methods.repository';
+import { RecurringService } from '../recurring/recurring.service';
 export declare class PaymentMethodsService {
     private readonly paymentMethodsRepository;
     private readonly prisma;
-    constructor(paymentMethodsRepository: PaymentMethodsRepository, prisma: PrismaService);
+    private readonly recurringService;
+    constructor(paymentMethodsRepository: PaymentMethodsRepository, prisma: PrismaService, recurringService: RecurringService);
     create(userId: string, dto: CreatePaymentMethodDto): Promise<PaymentMethodWithCard>;
     findAll(userId: string, type?: PaymentMethodType): Promise<PaymentMethodWithCard[]>;
     findById(id: string, userId: string): Promise<PaymentMethodWithCard>;
@@ -22,26 +24,17 @@ export declare class PaymentMethodsService {
                 creditLimitCents: bigint | null;
             } | null;
         } & {
+            name: string;
             id: string;
+            userId: string;
             type: import(".prisma/client").$Enums.PaymentMethodType;
             createdAt: Date;
-            name: string;
             updatedAt: Date;
             deletedAt: Date | null;
-            userId: string;
         };
         referenceMonth: string;
         totalCents: bigint;
         transactions: ({
-            category: {
-                isSystem: boolean;
-                id: string;
-                type: import(".prisma/client").$Enums.TransactionType;
-                createdAt: Date;
-                name: string;
-                deletedAt: Date | null;
-                userId: string | null;
-            } | null;
             paymentMethod: ({
                 creditCard: {
                     id: string;
@@ -51,48 +44,57 @@ export declare class PaymentMethodsService {
                     creditLimitCents: bigint | null;
                 } | null;
             } & {
+                name: string;
                 id: string;
+                userId: string;
                 type: import(".prisma/client").$Enums.PaymentMethodType;
                 createdAt: Date;
-                name: string;
                 updatedAt: Date;
                 deletedAt: Date | null;
-                userId: string;
             }) | null;
+            category: {
+                name: string;
+                id: string;
+                userId: string | null;
+                type: import(".prisma/client").$Enums.TransactionType;
+                createdAt: Date;
+                deletedAt: Date | null;
+                isSystem: boolean;
+            } | null;
             installmentPlan: {
                 id: string;
+                userId: string;
                 createdAt: Date;
-                status: import(".prisma/client").$Enums.InstallmentStatus;
-                description: string;
                 updatedAt: Date;
                 deletedAt: Date | null;
-                userId: string;
-                notes: string | null;
                 categoryId: string | null;
                 paymentMethodId: string;
+                description: string;
+                notes: string | null;
                 totalAmountCents: bigint;
                 installmentCount: number;
                 firstReferenceMonth: string;
+                status: import(".prisma/client").$Enums.InstallmentStatus;
                 purchaseDate: Date;
             } | null;
         } & {
             id: string;
+            userId: string;
             type: import(".prisma/client").$Enums.TransactionType;
             createdAt: Date;
-            description: string;
             updatedAt: Date;
             deletedAt: Date | null;
-            userId: string;
-            amountCents: bigint;
-            origin: import(".prisma/client").$Enums.TransactionOrigin;
-            referenceMonth: string;
-            transactionDate: Date;
-            notes: string | null;
             categoryId: string | null;
             paymentMethodId: string | null;
             installmentPlanId: string | null;
             recurringTransactionId: string | null;
             incomeEntryId: string | null;
+            description: string;
+            amountCents: bigint;
+            origin: import(".prisma/client").$Enums.TransactionOrigin;
+            referenceMonth: string;
+            transactionDate: Date;
+            notes: string | null;
         })[];
     }>;
 }

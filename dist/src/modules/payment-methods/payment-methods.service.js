@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentMethodsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -15,10 +18,12 @@ const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../shared/database/prisma.service");
 const domain_exceptions_1 = require("../../shared/exceptions/domain.exceptions");
 const payment_methods_repository_1 = require("./payment-methods.repository");
+const recurring_service_1 = require("../recurring/recurring.service");
 let PaymentMethodsService = class PaymentMethodsService {
-    constructor(paymentMethodsRepository, prisma) {
+    constructor(paymentMethodsRepository, prisma, recurringService) {
         this.paymentMethodsRepository = paymentMethodsRepository;
         this.prisma = prisma;
+        this.recurringService = recurringService;
     }
     async create(userId, dto) {
         if (dto.type === client_1.PaymentMethodType.CREDIT_CARD &&
@@ -91,6 +96,7 @@ let PaymentMethodsService = class PaymentMethodsService {
         const pm = await this.paymentMethodsRepository.findById(id, userId);
         if (!pm)
             throw new domain_exceptions_1.EntityNotFoundException('PaymentMethod', id);
+        await this.recurringService.generateForMonth(userId, month);
         const transactions = await this.prisma.transaction.findMany({
             where: {
                 paymentMethodId: id,
@@ -111,7 +117,9 @@ let PaymentMethodsService = class PaymentMethodsService {
 exports.PaymentMethodsService = PaymentMethodsService;
 exports.PaymentMethodsService = PaymentMethodsService = __decorate([
     (0, common_1.Injectable)(),
+    __param(2, (0, common_1.Inject)((0, common_1.forwardRef)(() => recurring_service_1.RecurringService))),
     __metadata("design:paramtypes", [payment_methods_repository_1.PaymentMethodsRepository,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        recurring_service_1.RecurringService])
 ], PaymentMethodsService);
 //# sourceMappingURL=payment-methods.service.js.map

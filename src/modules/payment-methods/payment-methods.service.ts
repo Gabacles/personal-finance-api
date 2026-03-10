@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { PaymentMethodType, TransactionOrigin } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
 import {
@@ -11,12 +11,15 @@ import {
   PaymentMethodWithCard,
   PaymentMethodsRepository,
 } from './payment-methods.repository';
+import { RecurringService } from '../recurring/recurring.service';
 
 @Injectable()
 export class PaymentMethodsService {
   constructor(
     private readonly paymentMethodsRepository: PaymentMethodsRepository,
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => RecurringService))
+    private readonly recurringService: RecurringService,
   ) {}
 
   async create(
@@ -123,6 +126,9 @@ export class PaymentMethodsService {
   async getStatement(id: string, userId: string, month: string) {
     const pm = await this.paymentMethodsRepository.findById(id, userId);
     if (!pm) throw new EntityNotFoundException('PaymentMethod', id);
+
+    // Materialize any recurring templates that haven't been generated yet for this month
+    await this.recurringService.generateForMonth(userId, month);
 
     const transactions = await this.prisma.transaction.findMany({
       where: {

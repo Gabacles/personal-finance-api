@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { CategoriesModule } from '../categories/categories.module';
 import { PaymentMethodsModule } from '../payment-methods/payment-methods.module';
 import { TransactionsModule } from '../transactions/transactions.module';
@@ -9,7 +9,7 @@ import { RecurringRepository } from './recurring.repository';
 import { RecurringService } from './recurring.service';
 
 @Module({
-  imports: [PaymentMethodsModule, CategoriesModule, TransactionsModule, UsersModule],
+  imports: [forwardRef(() => PaymentMethodsModule), CategoriesModule, TransactionsModule, UsersModule],
   controllers: [RecurringController],
   providers: [RecurringService, RecurringRepository, TaxCalculatorService],
   exports: [RecurringService],
