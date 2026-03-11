@@ -235,10 +235,14 @@ export class IncomeService {
         tx,
       );
 
-      // Update the linked income transaction amount
+      // Update the linked income transaction with the new net amount and any changed metadata
       await tx.transaction.updateMany({
         where: { incomeEntryId: id, deletedAt: null },
-        data: { amountCents: newNetCents },
+        data: {
+          amountCents: newNetCents,
+          ...(dto.description !== undefined ? { description: dto.description } : {}),
+          ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+        },
       });
     });
 

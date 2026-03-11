@@ -124,6 +124,22 @@ export class TransactionsRepository {
     return result.count;
   }
 
+  async updateManyByRecurringId(
+    recurringTransactionId: string,
+    fromMonth: string,
+    data: Prisma.TransactionUpdateManyMutationInput,
+  ): Promise<number> {
+    const result = await this.prisma.transaction.updateMany({
+      where: {
+        recurringTransactionId,
+        referenceMonth: { gte: fromMonth },
+        deletedAt: null,
+      },
+      data,
+    });
+    return result.count;
+  }
+
   async findByRecurringAndMonth(
     recurringId: string,
     month: string,

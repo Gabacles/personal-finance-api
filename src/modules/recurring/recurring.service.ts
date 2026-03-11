@@ -220,7 +220,7 @@ export class RecurringService {
       );
     }
 
-    return this.recurringRepository.update(id, {
+    const updated = await this.recurringRepository.update(id, {
       ...(dto.description !== undefined ? { description: dto.description } : {}),
       ...(dto.amountCents !== undefined ? { amountCents: BigInt(dto.amountCents) } : {}),
       ...(dto.endMonth !== undefined ? { endMonth: dto.endMonth } : {}),
@@ -231,6 +231,47 @@ export class RecurringService {
       ...(dto.applyTaxDeductions !== undefined ? { applyTaxDeductions: dto.applyTaxDeductions } : {}),
       ...(dto.dependents !== undefined ? { dependents: dto.dependents } : {}),
     });
+
+    // Propagate field changes to already-materialized transactions for the current month onwards.
+    // Past months are intentionally left untouched to preserve financial history.
+    const propagation: Record<string, unknown> = {};
+    if (dto.description !== undefined) propagation.description = dto.description;
+    if (dto.categoryId !== undefined) propagation.categoryId = dto.categoryId;
+    if (dto.paymentMethodId !== undefined) propagation.paymentMethodId = dto.paymentMethodId;
+    if (dto.notes !== undefined) propagation.notes = dto.notes;
+
+    // Recompute the effective (net) amount whenever any amount-affecting field changed
+    const amountAffected =
+      dto.amountCents !== undefined ||
+      dto.applyTaxDeductions !== undefined ||
+      dto.dependents !== undefined;
+
+    if (amountAffected) {
+      let effectiveAmount = updated.amountCents;
+      if (updated.applyTaxDeductions && updated.type === TransactionType.INCOME) {
+        const user = await this.usersService.findById(userId);
+        if (user.employmentType === EmploymentType.CLT) {
+          const year = parseInt(currentReferenceMonth().slice(0, 4), 10);
+          const breakdown = await this.taxCalculatorService.computeCLT(
+            updated.amountCents,
+            year,
+            updated.dependents,
+          );
+          effectiveAmount = breakdown.netCents;
+        }
+      }
+      propagation.amountCents = effectiveAmount;
+    }
+
+    if (Object.keys(propagation).length > 0) {
+      await this.transactionsService.updateMaterializedByRecurringId(
+        id,
+        currentReferenceMonth(),
+        propagation as any,
+      );
+    }
+
+    return updated;
   }
 
   async activate(id: string, userId: string): Promise<RecurringTransaction> {

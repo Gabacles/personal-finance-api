@@ -79,8 +79,13 @@ export class RecurringController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update a recurring transaction template' })
-  @ApiOkResponse({ description: 'Recurring transaction template updated.' })
+  @ApiOperation({
+    summary: 'Update a recurring transaction template',
+    description:
+      'Updates the template and propagates changes (description, categoryId, paymentMethodId, notes, amountCents) ' +
+      'to already-materialized RECURRING transactions from the current month onwards. Past months are preserved.',
+  })
+  @ApiOkResponse({ description: 'Updated recurring transaction template.' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,
