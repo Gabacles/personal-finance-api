@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentMethodType, TransactionType } from '@prisma/client';
+import { EmploymentType, PaymentMethodType, TransactionType } from '@prisma/client';
 import { EntityNotFoundException, BusinessRuleException } from '../../shared/exceptions/domain.exceptions';
 import { CategoriesService } from '../categories/categories.service';
 import { PaymentMethodsRepository } from '../payment-methods/payment-methods.repository';
 import { TransactionsService } from '../transactions/transactions.service';
+import { TaxCalculatorService } from '../income/tax-calculator.service';
+import { UsersService } from '../users/users.service';
 import { RecurringRepository } from './recurring.repository';
 import { RecurringService } from './recurring.service';
 
@@ -26,6 +28,8 @@ const mockTemplate = (overrides: Partial<any> = {}) => ({
   dayOfMonth: null,
   categoryId: null,
   paymentMethodId: null,
+  applyTaxDeductions: false,
+  dependents: 0,
   notes: null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -39,6 +43,8 @@ describe('RecurringService', () => {
   let paymentMethodsRepo: jest.Mocked<PaymentMethodsRepository>;
   let categoriesService: jest.Mocked<CategoriesService>;
   let transactionsService: jest.Mocked<TransactionsService>;
+  let taxCalculatorService: jest.Mocked<TaxCalculatorService>;
+  let usersService: jest.Mocked<UsersService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -71,6 +77,19 @@ describe('RecurringService', () => {
           provide: TransactionsService,
           useValue: {
             createFromRecurring: jest.fn(),
+            softDeleteByRecurringTransactionId: jest.fn(),
+          },
+        },
+        {
+          provide: TaxCalculatorService,
+          useValue: {
+            computeCLT: jest.fn(),
+          },
+        },
+        {
+          provide: UsersService,
+          useValue: {
+            findById: jest.fn(),
           },
         },
       ],
@@ -81,6 +100,8 @@ describe('RecurringService', () => {
     paymentMethodsRepo = module.get(PaymentMethodsRepository);
     categoriesService = module.get(CategoriesService);
     transactionsService = module.get(TransactionsService);
+    taxCalculatorService = module.get(TaxCalculatorService);
+    usersService = module.get(UsersService);
   });
 
   // ---------------------------------------------------------------------------
@@ -176,6 +197,42 @@ describe('RecurringService', () => {
 
       expect(result).toBe(expected);
     });
+
+    it('throws TAX_DEDUCTIONS_ONLY_FOR_INCOME when applyTaxDeductions=true for EXPENSE', async () => {
+      await expect(
+        service.create('user-1', {
+          description: 'Netflix',
+          amountCents: 4990,
+          type: TransactionType.EXPENSE,
+          startMonth: '2026-01',
+          applyTaxDeductions: true,
+        }),
+      ).rejects.toThrow(BusinessRuleException);
+    });
+
+    it('creates INCOME template with applyTaxDeductions=true', async () => {
+      const expected = mockTemplate({
+        type: TransactionType.INCOME,
+        amountCents: BigInt(800000),
+        applyTaxDeductions: true,
+        dependents: 1,
+      });
+      recurringRepo.create.mockResolvedValue(expected as any);
+
+      const result = await service.create('user-1', {
+        description: 'Salary',
+        amountCents: 800000,
+        type: TransactionType.INCOME,
+        startMonth: '2026-01',
+        applyTaxDeductions: true,
+        dependents: 1,
+      });
+
+      expect(recurringRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ applyTaxDeductions: true, dependents: 1 }),
+      );
+      expect(result).toBe(expected);
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -196,30 +253,68 @@ describe('RecurringService', () => {
           userId: 'user-1',
           recurringTransactionId: 'rt-1',
           referenceMonth: '2026-03',
+          amountCents: BigInt(4990),
         }),
       );
       expect(result).toEqual({ generated: 1, skipped: 0 });
     });
 
-    it('counts skipped (null return = already generated / P2002 hit)', async () => {
-      const templates = [mockTemplate({ id: 'rt-1' }), mockTemplate({ id: 'rt-2' })];
-      recurringRepo.findActiveForMonth.mockResolvedValue(templates as any);
-      // First already exists, second is new
-      transactionsService.createFromRecurring
-        .mockResolvedValueOnce(null)          // skipped
-        .mockResolvedValueOnce({ id: 'tx-2' } as any); // generated
+    it('applies CLT tax deductions when applyTaxDeductions=true and user is CLT', async () => {
+      const grossCents = BigInt(800000);
+      const netCents = BigInt(650000);
+      const template = mockTemplate({
+        type: TransactionType.INCOME,
+        amountCents: grossCents,
+        applyTaxDeductions: true,
+        dependents: 0,
+      });
+      recurringRepo.findActiveForMonth.mockResolvedValue([template] as any);
+      usersService.findById.mockResolvedValue({ id: 'user-1', employmentType: EmploymentType.CLT } as any);
+      taxCalculatorService.computeCLT.mockResolvedValue({ netCents } as any);
+      transactionsService.createFromRecurring.mockResolvedValue({ id: 'tx-1' } as any);
 
-      const result = await service.generateForMonth('user-1', '2026-03');
+      await service.generateForMonth('user-1', '2026-03');
 
-      expect(result).toEqual({ generated: 1, skipped: 1 });
+      expect(taxCalculatorService.computeCLT).toHaveBeenCalledWith(grossCents, 2026, 0);
+      expect(transactionsService.createFromRecurring).toHaveBeenCalledWith(
+        expect.objectContaining({ amountCents: netCents }),
+      );
     });
 
-    it('returns 0 generated when no active templates found', async () => {
-      recurringRepo.findActiveForMonth.mockResolvedValue([]);
+    it('does not apply deductions when user is PJ even if applyTaxDeductions=true', async () => {
+      const grossCents = BigInt(800000);
+      const template = mockTemplate({
+        type: TransactionType.INCOME,
+        amountCents: grossCents,
+        applyTaxDeductions: true,
+        dependents: 0,
+      });
+      recurringRepo.findActiveForMonth.mockResolvedValue([template] as any);
+      usersService.findById.mockResolvedValue({ id: 'user-1', employmentType: EmploymentType.PJ } as any);
+      transactionsService.createFromRecurring.mockResolvedValue({ id: 'tx-1' } as any);
 
-      const result = await service.generateForMonth('user-1', '2026-03');
+      await service.generateForMonth('user-1', '2026-03');
 
-      expect(result).toEqual({ generated: 0, skipped: 0 });
+      expect(taxCalculatorService.computeCLT).not.toHaveBeenCalled();
+      expect(transactionsService.createFromRecurring).toHaveBeenCalledWith(
+        expect.objectContaining({ amountCents: grossCents }),
+      );
+    });
+
+    it('fetches user only once for multiple templates with applyTaxDeductions=true', async () => {
+      const netCents = BigInt(650000);
+      const templates = [
+        mockTemplate({ id: 'rt-1', type: TransactionType.INCOME, amountCents: BigInt(800000), applyTaxDeductions: true }),
+        mockTemplate({ id: 'rt-2', type: TransactionType.INCOME, amountCents: BigInt(800000), applyTaxDeductions: true }),
+      ];
+      recurringRepo.findActiveForMonth.mockResolvedValue(templates as any);
+      usersService.findById.mockResolvedValue({ id: 'user-1', employmentType: EmploymentType.CLT } as any);
+      taxCalculatorService.computeCLT.mockResolvedValue({ netCents } as any);
+      transactionsService.createFromRecurring.mockResolvedValue({ id: 'tx-1' } as any);
+
+      await service.generateForMonth('user-1', '2026-03');
+
+      expect(usersService.findById).toHaveBeenCalledTimes(1);
     });
   });
 

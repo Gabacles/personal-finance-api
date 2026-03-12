@@ -39,6 +39,25 @@ export class UpdateRecurringDto {
   @IsString()
   paymentMethodId?: string;
 
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Override whether INSS/IRRF deductions are applied during generation. Only valid when type=INCOME.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  applyTaxDeductions?: boolean;
+
+  @ApiPropertyOptional({
+    example: 2,
+    description: 'Number of tax dependents for IRRF calculation.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  dependents?: number;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

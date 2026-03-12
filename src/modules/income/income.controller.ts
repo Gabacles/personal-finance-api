@@ -129,8 +129,13 @@ export class IncomeController {
   @Patch(':id')
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update income entry gross amount and deductions' })
-  @ApiOkResponse({ description: 'Updated income entry.' })
+  @ApiOperation({
+    summary: 'Update income entry',
+    description:
+      'Updates gross amount, deductions, description, and notes. ' +
+      'The linked INCOME transaction in the ledger is also updated (net amount, description, notes).',
+  })
+  @ApiOkResponse({ description: 'Updated income entry with recomputed deductions.' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,

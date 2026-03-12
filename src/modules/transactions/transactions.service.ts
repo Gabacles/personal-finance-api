@@ -240,6 +240,18 @@ export class TransactionsService {
     await this.transactionsRepository.softDelete(id);
   }
 
+  async softDeleteByRecurringTransactionId(recurringTransactionId: string): Promise<number> {
+    return this.transactionsRepository.softDeleteByRecurringTransactionId(recurringTransactionId);
+  }
+
+  async updateMaterializedByRecurringId(
+    recurringTransactionId: string,
+    fromMonth: string,
+    data: Prisma.TransactionUpdateManyMutationInput,
+  ): Promise<void> {
+    await this.transactionsRepository.updateManyByRecurringId(recurringTransactionId, fromMonth, data);
+  }
+
   async findByFilters(
     userId: string,
     filters: TransactionFilters,

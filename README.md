@@ -49,7 +49,7 @@ The API is tailored for real-world Brazilian workflows, including CLT tax estima
 - **Direct Expenses** — Record non-credit-card expenses (PIX, debit card, cash) as one-time transactions.
 - **Transaction Ledger** — Unified, filterable ledger of all financial movements with pagination and multi-criteria queries.
 - **Budgeting** — Create monthly budgets with labeled allocations optionally linked to categories.
-- **Categories** — System-seeded and user-defined categories for expenses and income, filterable by type.
+- **Categories** — Globally shared system categories and user-defined categories for expenses and income, filterable by type.
 - **Monthly Summary** — Aggregated view of income, expenses, and balance for any given month.
 - **Dashboard & Projections** — Current month summary with forward-looking projections (up to 12 months) based on committed installments and active recurring transactions.
 - **Credit Card Statement** — Detailed statement view per card per month with category breakdown.
@@ -827,7 +827,7 @@ The API uses **JWT Bearer Token** authentication:
    Authorization: Bearer <token>
    ```
 5. Passwords are hashed with **Argon2** (winner of the Password Hashing Competition).
-6. On registration, the system automatically **seeds default categories** for the user.
+6. System categories are **globally shared** — they are created once via `npm run db:seed` and available to every user without duplication.
 
 **Public endpoints** (no token required):
 - `GET /api/v1/health`

@@ -46,6 +46,27 @@ export class CreateRecurringDto {
   @IsString()
   paymentMethodId?: string;
 
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Only valid when type=INCOME. When true, amountCents is treated as GROSS salary and INSS/IRRF are automatically deducted (CLT users only) before the transaction is created. Defaults to false.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  applyTaxDeductions?: boolean;
+
+  @ApiPropertyOptional({
+    example: 2,
+    description:
+      'Number of tax dependents used in the IRRF calculation. Only relevant when applyTaxDeductions=true and the user is CLT. Defaults to 0.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  dependents?: number;
+
   @ApiPropertyOptional({ example: 'Monthly streaming subscription' })
   @IsOptional()
   @IsString()

@@ -204,20 +204,22 @@ model InstallmentPlan {
 // ---------------------------------------------------------------------------
 
 model RecurringTransaction {
-  id              String          @id @default(uuid())
-  userId          String          @map("user_id")
-  categoryId      String?         @map("category_id")
-  paymentMethodId String?         @map("payment_method_id")
-  description     String          @db.VarChar(255)
-  amountCents     BigInt          @map("amount_cents")
-  type            TransactionType
-  dayOfMonth      Int?            @map("day_of_month")
-  startMonth      String          @map("start_month") @db.Char(7)
-  endMonth        String?         @map("end_month") @db.Char(7)
-  isActive        Boolean         @default(true) @map("is_active")
-  notes           String?         @db.Text
-  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz()
+  id                 String          @id @default(uuid())
+  userId             String          @map("user_id")
+  categoryId         String?         @map("category_id")
+  paymentMethodId    String?         @map("payment_method_id")
+  description        String          @db.VarChar(255)
+  amountCents        BigInt          @map("amount_cents")
+  type               TransactionType
+  dayOfMonth         Int?            @map("day_of_month")
+  startMonth         String          @map("start_month") @db.Char(7)
+  endMonth           String?         @map("end_month") @db.Char(7)
+  isActive           Boolean         @default(true) @map("is_active")
+  applyTaxDeductions Boolean         @default(false) @map("apply_tax_deductions")
+  dependents         Int             @default(0)
+  notes              String?         @db.Text
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz()
   deletedAt       DateTime?       @map("deleted_at") @db.Timestamptz()
 
   // relations
