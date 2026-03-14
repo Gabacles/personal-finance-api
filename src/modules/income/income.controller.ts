@@ -32,6 +32,57 @@ import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
 import { EstimateTaxDto } from './dto/estimate-tax.dto';
 
+const incomeDeductionSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    incomeEntryId: { type: 'string', format: 'uuid' },
+    description: { type: 'string', example: 'INSS' },
+    amountCents: { type: 'number', example: 85150 },
+    isAutomatic: { type: 'boolean', example: true },
+    deductionType: { type: 'string', nullable: true, example: 'INSS' },
+    createdAt: { type: 'string', format: 'date-time' },
+  },
+};
+
+const incomeEntrySchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', format: 'uuid' },
+    userId: { type: 'string', format: 'uuid' },
+    referenceMonth: { type: 'string', example: '2026-03' },
+    grossCents: { type: 'number', example: 800000 },
+    netCents: { type: 'number', example: 582231 },
+    employmentType: { type: 'string', enum: ['CLT', 'PJ', 'OTHER'] },
+    description: { type: 'string', example: 'Salário' },
+    notes: { type: 'string', nullable: true, example: 'Bônus incluso' },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
+    deletedAt: { type: 'string', format: 'date-time', nullable: true },
+    deductions: {
+      type: 'array',
+      items: incomeDeductionSchema,
+    },
+  },
+};
+
+const incomeEntryEnvelopeSchema = {
+  type: 'object',
+  properties: {
+    data: incomeEntrySchema,
+  },
+};
+
+const incomeEntryListEnvelopeSchema = {
+  type: 'object',
+  properties: {
+    data: {
+      type: 'array',
+      items: incomeEntrySchema,
+    },
+  },
+};
+
 @ApiTags('Income')
 @Controller('income')
 export class IncomeController {
@@ -94,7 +145,10 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register income for a reference month' })
-  @ApiCreatedResponse({ description: 'Income entry created successfully.' })
+  @ApiCreatedResponse({
+    description: 'Income entry created successfully.',
+    schema: incomeEntryEnvelopeSchema,
+  })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   register(
     @CurrentUser() user: AuthenticatedUser,
@@ -107,7 +161,10 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List all income entries' })
-  @ApiOkResponse({ description: 'List of income entries.' })
+  @ApiOkResponse({
+    description: 'List of income entries.',
+    schema: incomeEntryListEnvelopeSchema,
+  })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.incomeService.findAll(user.id);
@@ -117,7 +174,10 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get a single income entry with deductions' })
-  @ApiOkResponse({ description: 'Income entry with deductions.' })
+  @ApiOkResponse({
+    description: 'Income entry with deductions.',
+    schema: incomeEntryEnvelopeSchema,
+  })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findOne(
     @CurrentUser() user: AuthenticatedUser,
@@ -135,7 +195,10 @@ export class IncomeController {
       'Updates gross amount, deductions, description, and notes. ' +
       'The linked INCOME transaction in the ledger is also updated (net amount, description, notes).',
   })
-  @ApiOkResponse({ description: 'Updated income entry with recomputed deductions.' })
+  @ApiOkResponse({
+    description: 'Updated income entry with recomputed deductions.',
+    schema: incomeEntryEnvelopeSchema,
+  })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   update(
     @CurrentUser() user: AuthenticatedUser,

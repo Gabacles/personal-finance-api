@@ -1,9 +1,11 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   ValidateNested,
@@ -46,6 +48,25 @@ export class CreateIncomeDto {
   @Min(0)
   @Type(() => Number)
   dependents?: number;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'When true (default), CLT users have automatic INSS/IRRF deductions. When false, no automatic tax deductions are applied.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  applyTaxDeductions?: boolean;
+
+  @ApiPropertyOptional({
+    example: '2e24553b-5f99-4f1f-a8c0-35b5b26f90d8',
+    description:
+      'Optional INCOME category ID for the linked ledger transaction. Category must belong to the user (or be a system category) and be of type INCOME.',
+  })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

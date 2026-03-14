@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { EmploymentType, Prisma } from '@prisma/client';
+import { EmploymentType, Prisma, TransactionType } from '@prisma/client';
 import {
   BusinessRuleException,
   EntityNotFoundException,
 } from '../../shared/exceptions/domain.exceptions';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { CategoriesService } from '../categories/categories.service';
 import { UsersService } from '../users/users.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { TaxBreakdown, TaxCalculatorService } from './tax-calculator.service';
@@ -20,6 +21,7 @@ export class IncomeService {
     private readonly incomeDeductionRepository: IncomeDeductionRepository,
     private readonly taxCalculatorService: TaxCalculatorService,
     private readonly usersService: UsersService,
+    private readonly categoriesService: CategoriesService,
     private readonly transactionsService: TransactionsService,
     private readonly prisma: PrismaService,
   ) {}
@@ -32,6 +34,15 @@ export class IncomeService {
     const year = parseInt(dto.referenceMonth.slice(0, 4), 10);
     const grossCents = BigInt(dto.grossCents);
     const dependents = dto.dependents ?? 0;
+    const applyTaxDeductions = dto.applyTaxDeductions ?? true;
+
+    if (dto.categoryId) {
+      await this.categoriesService.validateOwnershipAndType(
+        dto.categoryId,
+        userId,
+        TransactionType.INCOME,
+      );
+    }
 
     // Check for duplicate
     const existing = await this.incomeRepository.findByMonth(
@@ -47,7 +58,7 @@ export class IncomeService {
 
     // Compute auto deductions for CLT employees
     let taxBreakdown: TaxBreakdown | null = null;
-    if (user.employmentType === EmploymentType.CLT) {
+    if (applyTaxDeductions && user.employmentType === EmploymentType.CLT) {
       taxBreakdown = await this.taxCalculatorService.computeCLT(
         grossCents,
         year,
@@ -115,6 +126,7 @@ export class IncomeService {
         await this.transactionsService.createIncomeTransaction(
           {
             userId,
+            categoryId: dto.categoryId,
             incomeEntryId: created.id,
             description: dto.description ?? 'Salário',
             amountCents: netCents,
@@ -146,10 +158,21 @@ export class IncomeService {
       dto.grossCents !== undefined ? BigInt(dto.grossCents) : entry.grossCents;
     const dependents = dto.dependents ?? 0;
     const year = parseInt(entry.referenceMonth.slice(0, 4), 10);
+    const currentlyApplyingTaxDeductions = hasAutoTaxDeductions(entry);
+    const applyTaxDeductions =
+      dto.applyTaxDeductions ?? currentlyApplyingTaxDeductions;
+
+    if (dto.categoryId) {
+      await this.categoriesService.validateOwnershipAndType(
+        dto.categoryId,
+        userId,
+        TransactionType.INCOME,
+      );
+    }
 
     // Recompute auto deductions when CLT
     let taxBreakdown: TaxBreakdown | null = null;
-    if (entry.employmentType === EmploymentType.CLT) {
+    if (applyTaxDeductions && entry.employmentType === EmploymentType.CLT) {
       taxBreakdown = await this.taxCalculatorService.computeCLT(
         newGrossCents,
         year,
@@ -242,6 +265,7 @@ export class IncomeService {
           amountCents: newNetCents,
           ...(dto.description !== undefined ? { description: dto.description } : {}),
           ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
+          ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
         },
       });
     });
@@ -304,4 +328,12 @@ function buildAutoDeductions(breakdown: TaxBreakdown | null): AutoDeduction[] {
     });
   }
   return deductions;
+}
+
+function hasAutoTaxDeductions(entry: IncomeEntryWithDeductions): boolean {
+  return entry.deductions.some(
+    (deduction) =>
+      deduction.isAutomatic &&
+      (deduction.deductionType === 'INSS' || deduction.deductionType === 'IRRF'),
+  );
 }

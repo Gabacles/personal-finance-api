@@ -45,7 +45,7 @@ The API is tailored for real-world Brazilian workflows, including CLT tax estima
 - **One-Time Purchases** — Record credit card purchases that are automatically assigned to the correct statement month.
 - **Installment Plans** — Split purchases across multiple months with accurate cent-level distribution (remainder on last installment).
 - **Recurring Transactions** — Create expense and income templates that lazily and idempotently generate monthly transactions.
-- **Income & CLT Tax Estimation** — Register monthly income with automatic INSS and IRRF deductions for CLT employees using progressive tax brackets.
+- **Income & CLT Tax Estimation** — Register monthly income with optional automatic INSS/IRRF deductions for CLT employees, optional INCOME category tagging in the ledger, and progressive tax bracket support.
 - **Direct Expenses** — Record non-credit-card expenses (PIX, debit card, cash) as one-time transactions.
 - **Transaction Ledger** — Unified, filterable ledger of all financial movements with pagination and multi-criteria queries.
 - **Budgeting** — Create monthly budgets with labeled allocations optionally linked to categories.
@@ -150,7 +150,7 @@ The first installment's reference month is computed from the credit card's closi
 
 ### CLT Net Income Estimation
 
-For CLT (formal employment) workers, the system automatically calculates:
+For CLT (formal employment) workers, the system can automatically calculate deductions when `applyTaxDeductions=true` (default for `POST /income`):
 
 1. **INSS (Social Security)** — Progressive brackets applied in tiers up to a ceiling.
 2. **IRRF (Income Tax)** — Applied to the taxable basis (gross − INSS − dependent allowances) using the matching bracket with base deduction.
@@ -591,7 +591,7 @@ All monetary values are in **BRL cents** (integer). Dates use **YYYY-MM-DD**, re
 | Method | Route              | Description                          | Auth   |
 | ------ | ------------------ | ------------------------------------ | ------ |
 | GET    | `/income/estimate` | Estimate CLT net income (public)     | Public |
-| POST   | `/income`          | Register monthly income              | JWT    |
+| POST   | `/income`          | Register monthly income (optional automatic taxes) | JWT    |
 | GET    | `/income`          | List all income entries              | JWT    |
 | GET    | `/income/:id`      | Get income entry with deductions     | JWT    |
 | PATCH  | `/income/:id`      | Update income entry                  | JWT    |
@@ -628,13 +628,20 @@ All monetary values are in **BRL cents** (integer). Dates use **YYYY-MM-DD**, re
   "referenceMonth": "2026-03",
   "grossCents": 700000,
   "description": "Salário",
+  "applyTaxDeductions": true,
   "dependents": 0,
+  "categoryId": "uuid",
   "customDeductions": [
     { "description": "Plano de saúde", "amountCents": 50000 },
     { "description": "Vale transporte", "amountCents": 20000 }
   ]
 }
 ```
+
+Notes:
+- `applyTaxDeductions` defaults to `true`. For CLT users, this controls whether automatic INSS/IRRF deductions are applied.
+- For `PJ`/`OTHER`, automatic deductions are not applied regardless of this flag.
+- `categoryId` is optional and must reference an `INCOME` category (user-owned or system).
 
 **Response (201):**
 ```json
@@ -1068,7 +1075,9 @@ curl -X POST http://localhost:3000/api/v1/income \
     "referenceMonth": "2026-03",
     "grossCents": 700000,
     "description": "Salário",
+    "applyTaxDeductions": true,
     "dependents": 0,
+    "categoryId": "uuid-income-category",
     "customDeductions": [
       { "description": "Plano de saúde", "amountCents": 50000 }
     ]

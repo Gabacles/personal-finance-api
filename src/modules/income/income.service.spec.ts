@@ -5,6 +5,7 @@ import {
   EntityNotFoundException,
 } from '../../shared/exceptions/domain.exceptions';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { CategoriesService } from '../categories/categories.service';
 import { UsersService } from '../users/users.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { TaxCalculatorService, TaxBreakdown } from './tax-calculator.service';
@@ -65,6 +66,7 @@ describe('IncomeService', () => {
   let deductionRepo: jest.Mocked<IncomeDeductionRepository>;
   let taxService: jest.Mocked<TaxCalculatorService>;
   let usersService: jest.Mocked<UsersService>;
+  let categoriesService: jest.Mocked<CategoriesService>;
   let transactionsService: jest.Mocked<TransactionsService>;
   let prisma: { $transaction: jest.Mock };
 
@@ -84,6 +86,7 @@ describe('IncomeService', () => {
         { provide: IncomeDeductionRepository, useValue: { createMany: jest.fn(), deleteByEntry: jest.fn(), deleteAutoByEntry: jest.fn(), findByEntry: jest.fn() } },
         { provide: TaxCalculatorService, useValue: { computeCLT: jest.fn() } },
         { provide: UsersService, useValue: { findById: jest.fn() } },
+        { provide: CategoriesService, useValue: { validateOwnershipAndType: jest.fn() } },
         { provide: TransactionsService, useValue: { createIncomeTransaction: jest.fn() } },
         { provide: PrismaService, useValue: prisma },
       ],
@@ -94,6 +97,7 @@ describe('IncomeService', () => {
     deductionRepo = module.get(IncomeDeductionRepository);
     taxService = module.get(TaxCalculatorService);
     usersService = module.get(UsersService);
+    categoriesService = module.get(CategoriesService);
     transactionsService = module.get(TransactionsService);
   });
 
@@ -107,6 +111,7 @@ describe('IncomeService', () => {
       incomeRepo.create.mockResolvedValue(mockEntry() as any);
       incomeRepo.findById.mockResolvedValue(mockEntry() as any);
       deductionRepo.createMany.mockResolvedValue([]);
+      categoriesService.validateOwnershipAndType.mockResolvedValue({} as any);
       transactionsService.createIncomeTransaction.mockResolvedValue({} as any);
     });
 
@@ -193,6 +198,41 @@ describe('IncomeService', () => {
       });
 
       expect(taxService.computeCLT).toHaveBeenCalledWith(700_000n, 2026, 2);
+    });
+
+    it('CLT with applyTaxDeductions=false skips tax calculation', async () => {
+      usersService.findById.mockResolvedValue(MOCK_USER_CLT as any);
+      incomeRepo.create.mockResolvedValue({ ...mockEntry(), netCents: 700_000n } as any);
+      incomeRepo.findById.mockResolvedValue({ ...mockEntry(), netCents: 700_000n, deductions: [] } as any);
+
+      await service.register('user-1', {
+        referenceMonth: '2026-03',
+        grossCents: 700_000,
+        applyTaxDeductions: false,
+      });
+
+      expect(taxService.computeCLT).not.toHaveBeenCalled();
+    });
+
+    it('validates INCOME category when categoryId is provided', async () => {
+      usersService.findById.mockResolvedValue(MOCK_USER_CLT as any);
+      taxService.computeCLT.mockResolvedValue(MOCK_TAX_BREAKDOWN);
+
+      await service.register('user-1', {
+        referenceMonth: '2026-03',
+        grossCents: 700_000,
+        categoryId: 'cat-income-1',
+      });
+
+      expect(categoriesService.validateOwnershipAndType).toHaveBeenCalledWith(
+        'cat-income-1',
+        'user-1',
+        'INCOME',
+      );
+      expect(transactionsService.createIncomeTransaction).toHaveBeenCalledWith(
+        expect.objectContaining({ categoryId: 'cat-income-1' }),
+        expect.anything(),
+      );
     });
   });
 
