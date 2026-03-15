@@ -1,10 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { IncomeEntry, Prisma } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
+import {
+  buildPaginatedResponse,
+  PaginatedResponse,
+  PaginationDto,
+} from '../../shared/pagination/pagination.dto';
 
 export type IncomeEntryWithDeductions = Prisma.IncomeEntryGetPayload<{
   include: { deductions: true };
 }>;
+
+export interface IncomeFilters {
+  referenceMonth?: string;
+}
 
 @Injectable()
 export class IncomeRepository {
@@ -18,12 +27,33 @@ export class IncomeRepository {
     return client.incomeEntry.create({ data });
   }
 
-  async findAllByUser(userId: string): Promise<IncomeEntryWithDeductions[]> {
-    return this.prisma.incomeEntry.findMany({
-      where: { userId, deletedAt: null },
-      include: { deductions: true },
-      orderBy: { referenceMonth: 'desc' },
-    });
+  async findAllByUser(
+    userId: string,
+    filters: IncomeFilters,
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponse<IncomeEntryWithDeductions>> {
+    const where: Prisma.IncomeEntryWhereInput = {
+      userId,
+      deletedAt: null,
+      ...(filters.referenceMonth
+        ? { referenceMonth: filters.referenceMonth }
+        : {}),
+    };
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.incomeEntry.findMany({
+        where,
+        include: { deductions: true },
+        orderBy: [{ referenceMonth: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take: limit,
+      }),
+      this.prisma.incomeEntry.count({ where }),
+    ]);
+
+    return buildPaginatedResponse(items, total, page, limit);
   }
 
   async findById(

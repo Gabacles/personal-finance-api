@@ -29,6 +29,7 @@ import {
 import { RecurringService } from './recurring.service';
 import { CreateRecurringDto } from './dto/create-recurring.dto';
 import { UpdateRecurringDto } from './dto/update-recurring.dto';
+import { QueryRecurringDto } from './dto/query-recurring.dto';
 
 const recurringTransactionSchema = {
   type: 'object',
@@ -53,6 +54,78 @@ const recurringTransactionSchema = {
   },
 };
 
+const recurringTransactionReadSchema = {
+  allOf: [
+    recurringTransactionSchema,
+    {
+      type: 'object',
+      properties: {
+        amountCents: {
+          type: 'number',
+          example: 582231,
+          description:
+            'Effective amount returned by read endpoints. For INCOME templates with applyTaxDeductions=true and CLT users, this value is net (after INSS/IRRF).',
+        },
+        grossAmountCents: {
+          type: 'number',
+          nullable: true,
+          example: 750000,
+          description:
+            'Only for INCOME templates. Original configured amount before automatic deductions.',
+        },
+        netAmountCents: {
+          type: 'number',
+          nullable: true,
+          example: 582231,
+          description:
+            'Only for INCOME templates. Effective net amount used in read responses.',
+        },
+        deductionCents: {
+          type: 'number',
+          nullable: true,
+          example: 167769,
+          description:
+            'Only for INCOME templates. grossAmountCents - netAmountCents.',
+        },
+        taxBreakdown: {
+          type: 'object',
+          nullable: true,
+          description:
+            'Detailed tax preview for INCOME templates when automatic deductions apply for CLT users.',
+          properties: {
+            grossCents: { type: 'number', example: 750000 },
+            inssCents: { type: 'number', example: 85150 },
+            irrfCents: { type: 'number', example: 82619 },
+            dependentAllowanceTotalCents: { type: 'number', example: 0 },
+            netCents: { type: 'number', example: 582231 },
+            inssSlices: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  rateBps: { type: 'number', example: 750 },
+                  appliedToCents: { type: 'number', example: 162100 },
+                  contributionCents: { type: 'number', example: 12157 },
+                },
+              },
+            },
+            irrfDetail: {
+              type: 'object',
+              properties: {
+                taxableBasisCents: { type: 'number', example: 664850 },
+                rateBps: { type: 'number', example: 2750 },
+                deductionAppliedCents: { type: 'number', example: 90873 },
+                monthlyReductionCents: { type: 'number', example: 9341 },
+                totalCents: { type: 'number', example: 82619 },
+              },
+            },
+          },
+        },
+      },
+    },
+  ],
+};
+
 const recurringTransactionEnvelopeSchema = {
   type: 'object',
   properties: {
@@ -64,9 +137,25 @@ const recurringTransactionListEnvelopeSchema = {
   type: 'object',
   properties: {
     data: {
-      type: 'array',
-      items: recurringTransactionSchema,
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: recurringTransactionReadSchema,
+        },
+        total: { type: 'number', example: 42 },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 20 },
+        totalPages: { type: 'number', example: 3 },
+      },
     },
+  },
+};
+
+const recurringTransactionReadEnvelopeSchema = {
+  type: 'object',
+  properties: {
+    data: recurringTransactionReadSchema,
   },
 };
 
@@ -93,22 +182,25 @@ export class RecurringController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'List recurring transaction templates' })
+  @ApiOperation({ summary: 'List recurring transaction templates with pagination' })
   @ApiQuery({ name: 'type', enum: TransactionType, required: false })
   @ApiQuery({ name: 'isActive', type: Boolean, required: false })
+  @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
+  @ApiQuery({ name: 'limit', type: Number, required: false, example: 20 })
   @ApiOkResponse({
-    description: 'List of recurring transaction templates.',
+    description: 'Paginated list of recurring transaction templates.',
     schema: recurringTransactionListEnvelopeSchema,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findAll(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('type') type?: TransactionType,
-    @Query('isActive') isActive?: string,
+    @Query() query: QueryRecurringDto,
   ) {
-    const isActiveParsed =
-      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
-    return this.recurringService.findAll(user.id, { type, isActive: isActiveParsed });
+    return this.recurringService.findAll(
+      user.id,
+      { type: query.type, isActive: query.isActive },
+      { page: query.page, limit: query.limit },
+    );
   }
 
   @Get(':id')
@@ -116,7 +208,7 @@ export class RecurringController {
   @ApiOperation({ summary: 'Get a single recurring transaction template' })
   @ApiOkResponse({
     description: 'Recurring transaction template details.',
-    schema: recurringTransactionEnvelopeSchema,
+    schema: recurringTransactionReadEnvelopeSchema,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
   findOne(

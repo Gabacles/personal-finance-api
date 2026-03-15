@@ -545,7 +545,7 @@ All monetary values are in **BRL cents** (integer). Dates use **YYYY-MM-DD**, re
 | Method | Route                                      | Description                   | Auth |
 | ------ | ------------------------------------------ | ----------------------------- | ---- |
 | POST   | `/recurring-transactions`                  | Create a recurring template   | JWT  |
-| GET    | `/recurring-transactions`                  | List templates (filter type/active) | JWT |
+| GET    | `/recurring-transactions`                  | List templates with pagination (filter type/active) | JWT |
 | GET    | `/recurring-transactions/:id`              | Get template details          | JWT  |
 | PATCH  | `/recurring-transactions/:id`              | Update template               | JWT  |
 | PATCH  | `/recurring-transactions/:id/activate`     | Reactivate a template         | JWT  |
@@ -586,13 +586,54 @@ All monetary values are in **BRL cents** (integer). Dates use **YYYY-MM-DD**, re
 ```
 </details>
 
+<details>
+<summary><strong>GET /recurring-transactions?type=INCOME&page=1&limit=20</strong></summary>
+
+For INCOME templates, read endpoints return an effective amount in amountCents.
+
+- CLT + applyTaxDeductions=true: amountCents is net.
+- PJ/OTHER or applyTaxDeductions=false: amountCents remains gross.
+
+**Response (200):**
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "description": "Salário",
+        "type": "INCOME",
+        "amountCents": 582231,
+        "grossAmountCents": 750000,
+        "netAmountCents": 582231,
+        "deductionCents": 167769,
+        "applyTaxDeductions": true,
+        "dependents": 0,
+        "taxBreakdown": {
+          "grossCents": 750000,
+          "inssCents": 85150,
+          "irrfCents": 82619,
+          "dependentAllowanceTotalCents": 0,
+          "netCents": 582231
+        }
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
+</details>
+
 ### Income
 
 | Method | Route              | Description                          | Auth   |
 | ------ | ------------------ | ------------------------------------ | ------ |
 | GET    | `/income/estimate` | Estimate CLT net income (public)     | Public |
 | POST   | `/income`          | Register monthly income (optional automatic taxes) | JWT    |
-| GET    | `/income`          | List all income entries              | JWT    |
+| GET    | `/income`          | List income entries with pagination and optional month filter | JWT    |
 | GET    | `/income/:id`      | Get income entry with deductions     | JWT    |
 | PATCH  | `/income/:id`      | Update income entry                  | JWT    |
 | DELETE | `/income/:id`      | Soft-delete income entry             | JWT    |
@@ -776,6 +817,9 @@ Notes:
   "data": {
     "referenceMonth": "2026-03",
     "totalIncomeCents": 700000,
+    "totalDeductionCents": 195956,
+    "manualDeductionCents": 28187,
+    "recurringDeductionCents": 167769,
     "totalExpenseCents": 325000,
     "balanceCents": 375000,
     "transactionCount": 15

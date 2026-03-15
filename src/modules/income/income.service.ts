@@ -10,9 +10,17 @@ import { UsersService } from '../users/users.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { TaxBreakdown, TaxCalculatorService } from './tax-calculator.service';
 import { IncomeDeductionRepository } from './income-deduction.repository';
-import { IncomeEntryWithDeductions, IncomeRepository } from './income.repository';
+import {
+  IncomeEntryWithDeductions,
+  IncomeFilters,
+  IncomeRepository,
+} from './income.repository';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
+import {
+  PaginatedResponse,
+  PaginationDto,
+} from '../../shared/pagination/pagination.dto';
 
 @Injectable()
 export class IncomeService {
@@ -263,8 +271,12 @@ export class IncomeService {
     return full;
   }
 
-  async findAll(userId: string): Promise<IncomeEntryWithDeductions[]> {
-    return this.incomeRepository.findAllByUser(userId);
+  async findAll(
+    userId: string,
+    filters: IncomeFilters,
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponse<IncomeEntryWithDeductions>> {
+    return this.incomeRepository.findAllByUser(userId, filters, pagination);
   }
 
   async findById(id: string, userId: string): Promise<IncomeEntryWithDeductions> {

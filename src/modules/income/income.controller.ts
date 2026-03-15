@@ -18,6 +18,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -31,6 +32,7 @@ import { TaxCalculatorService } from './tax-calculator.service';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
 import { EstimateTaxDto } from './dto/estimate-tax.dto';
+import { QueryIncomeDto } from './dto/query-income.dto';
 
 const incomeDeductionSchema = {
   type: 'object',
@@ -116,8 +118,17 @@ const incomeEntryListEnvelopeSchema = {
   type: 'object',
   properties: {
     data: {
-      type: 'array',
-      items: incomeEntrySchema,
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: incomeEntrySchema,
+        },
+        total: { type: 'number', example: 42 },
+        page: { type: 'number', example: 1 },
+        limit: { type: 'number', example: 20 },
+        totalPages: { type: 'number', example: 3 },
+      },
     },
   },
 };
@@ -174,17 +185,35 @@ export class IncomeController {
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'List all income entries',
+    summary: 'List all income entries with pagination',
     description:
       'Returns all non-deleted income entries for the authenticated user, including deductions.',
   })
+  @ApiQuery({
+    name: 'referenceMonth',
+    type: String,
+    required: false,
+    example: '2026-03',
+    description: 'Filter entries by reference month (YYYY-MM).',
+  })
+  @ApiQuery({ name: 'page', type: Number, required: false, example: 1 })
+  @ApiQuery({ name: 'limit', type: Number, required: false, example: 20 })
   @ApiOkResponse({
-    description: 'List of income entries (multiple entries may exist for the same month).',
+    description:
+      'Paginated list of income entries (multiple entries may exist for the same month).',
     schema: incomeEntryListEnvelopeSchema,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
-  findAll(@CurrentUser() user: AuthenticatedUser) {
-    return this.incomeService.findAll(user.id);
+  findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: QueryIncomeDto,
+  ) {
+    return this.incomeService.findAll(user.id, {
+      referenceMonth: query.referenceMonth,
+    }, {
+      page: query.page,
+      limit: query.limit,
+    });
   }
 
   @Get(':id')

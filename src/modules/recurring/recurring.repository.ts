@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, RecurringTransaction } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
+import {
+  buildPaginatedResponse,
+  PaginatedResponse,
+  PaginationDto,
+} from '../../shared/pagination/pagination.dto';
 
 export interface RecurringFilters {
   type?: string;
@@ -20,16 +25,29 @@ export class RecurringRepository {
   async findAllByUser(
     userId: string,
     filters: RecurringFilters = {},
-  ): Promise<RecurringTransaction[]> {
-    return this.prisma.recurringTransaction.findMany({
-      where: {
-        userId,
-        deletedAt: null,
-        ...(filters.isActive !== undefined ? { isActive: filters.isActive } : {}),
-        ...(filters.type ? { type: filters.type as any } : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponse<RecurringTransaction>> {
+    const where: Prisma.RecurringTransactionWhereInput = {
+      userId,
+      deletedAt: null,
+      ...(filters.isActive !== undefined ? { isActive: filters.isActive } : {}),
+      ...(filters.type ? { type: filters.type as any } : {}),
+    };
+
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.recurringTransaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.recurringTransaction.count({ where }),
+    ]);
+
+    return buildPaginatedResponse(items, total, page, limit);
   }
 
   async findById(id: string, userId: string): Promise<RecurringTransaction | null> {

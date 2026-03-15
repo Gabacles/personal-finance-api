@@ -73,6 +73,8 @@ describe('SummaryService', () => {
       expect(result.totalGrossCents).toBe(0n);
       expect(result.totalNetIncomeCents).toBe(0n);
       expect(result.totalDeductionCents).toBe(0n);
+      expect(result.manualDeductionCents).toBe(0n);
+      expect(result.recurringDeductionCents).toBe(0n);
       expect(result.totalExpenseCents).toBe(0n);
       expect(result.oneTimeCents).toBe(0n);
       expect(result.installmentCents).toBe(0n);
@@ -143,6 +145,8 @@ describe('SummaryService', () => {
       expect(result.totalGrossCents).toBe(600000n);
       expect(result.totalNetIncomeCents).toBe(500000n);
       expect(result.totalDeductionCents).toBe(100000n);
+      expect(result.manualDeductionCents).toBe(100000n);
+      expect(result.recurringDeductionCents).toBe(0n);
       expect(result.totalExpenseCents).toBe(200000n);
       expect(result.balanceCents).toBe(300000n);
     });
@@ -228,6 +232,7 @@ describe('SummaryService', () => {
           type: TransactionType.INCOME,
           origin: TransactionOrigin.RECURRING,
           amountCents: 200000n,
+          recurringTransaction: null,
           categoryId: null,
           paymentMethodId: null,
           category: null,
@@ -249,6 +254,68 @@ describe('SummaryService', () => {
       expect(result.totalNetIncomeCents).toBe(700000n); // 500000 + 200000
       expect(result.totalGrossCents).toBe(600000n);
       expect(result.balanceCents).toBe(700000n);
+    });
+
+    it('includes recurring income automatic deductions in totalDeductionCents', async () => {
+      prismaMock.transaction.findMany.mockResolvedValue([
+        {
+          type: TransactionType.INCOME,
+          origin: TransactionOrigin.RECURRING,
+          amountCents: 582231n,
+          recurringTransaction: {
+            applyTaxDeductions: true,
+            amountCents: 750000n,
+          },
+          categoryId: null,
+          paymentMethodId: null,
+          category: null,
+          paymentMethod: null,
+          installmentPlan: null,
+        },
+      ]);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
+
+      const result = await service.getForMonth(USER_ID, MONTH);
+
+      expect(result.recurringIncomeCents).toBe(582231n);
+      expect(result.manualDeductionCents).toBe(0n);
+      expect(result.recurringDeductionCents).toBe(167769n);
+      expect(result.totalDeductionCents).toBe(167769n);
+      expect(result.totalNetIncomeCents).toBe(582231n);
+    });
+
+    it('keeps deduction split consistent: total = manual + recurring', async () => {
+      prismaMock.transaction.findMany.mockResolvedValue([
+        {
+          type: TransactionType.INCOME,
+          origin: TransactionOrigin.RECURRING,
+          amountCents: 582231n,
+          recurringTransaction: {
+            applyTaxDeductions: true,
+            amountCents: 750000n,
+          },
+          categoryId: null,
+          paymentMethodId: null,
+          category: null,
+          paymentMethod: null,
+          installmentPlan: null,
+        },
+      ]);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([
+        {
+          grossCents: 600000n,
+          netCents: 500000n,
+          deductions: [{ amountCents: 100000n }],
+        },
+      ]);
+
+      const result = await service.getForMonth(USER_ID, MONTH);
+
+      expect(result.manualDeductionCents).toBe(100000n);
+      expect(result.recurringDeductionCents).toBe(167769n);
+      expect(result.totalDeductionCents).toBe(
+        result.manualDeductionCents + result.recurringDeductionCents,
+      );
     });
 
     it('INCOME-type transactions are not counted in expense totals', async () => {
@@ -309,6 +376,8 @@ describe('SummaryService', () => {
       const result = await service.getForMonth(USER_ID, MONTH);
 
       expect(result.totalGrossCents).toBe(700000n);
+      expect(result.manualDeductionCents).toBe(90000n);
+      expect(result.recurringDeductionCents).toBe(0n);
       expect(result.totalDeductionCents).toBe(90000n);
       expect(result.totalNetIncomeCents).toBe(610000n);
       expect(result.incomeEntries).toHaveLength(2);

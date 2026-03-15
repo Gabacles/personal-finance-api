@@ -75,7 +75,23 @@ export class ReportingController {
           description:
             'Sum of all incomeEntries.netCents (POST /income) and all RECURRING INCOME transactions generated for this month.',
         },
-        totalDeductionCents: { type: 'number', example: 45956 },
+        totalDeductionCents: {
+          type: 'number',
+          example: 45956,
+          description:
+            'Total deductions in month. Formula: manualDeductionCents + recurringDeductionCents.',
+        },
+        manualDeductionCents: {
+          type: 'number',
+          example: 45956,
+          description: 'Only the deductions from manual income entries (/income).',
+        },
+        recurringDeductionCents: {
+          type: 'number',
+          example: 167769,
+          description:
+            'Only the deductions from recurring INCOME templates that apply automatic taxes.',
+        },
         totalExpenseCents: { type: 'number', example: 423500 },
         oneTimeCents: { type: 'number', example: 250000 },
         installmentCents: { type: 'number', example: 100000 },
@@ -148,7 +164,23 @@ export class ReportingController {
               description:
                 'sum(incomeEntries.netCents) + recurringIncomeCents, where recurringIncomeCents uses net amounts when recurring template has applyTaxDeductions=true for CLT users.',
             },
-            totalDeductionCents: { type: 'number', example: 45956 },
+            totalDeductionCents: {
+              type: 'number',
+              example: 45956,
+              description:
+                'Total deductions in month. Formula: manualDeductionCents + recurringDeductionCents.',
+            },
+            manualDeductionCents: {
+              type: 'number',
+              example: 45956,
+              description: 'Only the deductions from manual income entries (/income).',
+            },
+            recurringDeductionCents: {
+              type: 'number',
+              example: 167769,
+              description:
+                'Only the deductions from recurring INCOME templates that apply automatic taxes.',
+            },
             totalExpenseCents: { type: 'number', example: 423500 },
             oneTimeCents: { type: 'number', example: 250000 },
             installmentCents: { type: 'number', example: 100000 },

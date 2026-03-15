@@ -8,8 +8,15 @@ import { CategoriesService } from '../categories/categories.service';
 import { PaymentMethodsRepository } from '../payment-methods/payment-methods.repository';
 import { computeStatementMonth } from '../payment-methods/credit-card-statement.service';
 import { TransactionsService } from '../transactions/transactions.service';
-import { TaxCalculatorService } from '../income/tax-calculator.service';
+import {
+  TaxBreakdown,
+  TaxCalculatorService,
+} from '../income/tax-calculator.service';
 import { UsersService } from '../users/users.service';
+import {
+  PaginatedResponse,
+  PaginationDto,
+} from '../../shared/pagination/pagination.dto';
 import { RecurringFilters, RecurringRepository } from './recurring.repository';
 import { CreateRecurringDto } from './dto/create-recurring.dto';
 import { UpdateRecurringDto } from './dto/update-recurring.dto';
@@ -18,6 +25,16 @@ export interface GenerateResult {
   generated: number;
   skipped: number;
 }
+
+export interface RecurringIncomeTaxPreview {
+  grossAmountCents: bigint;
+  netAmountCents: bigint;
+  deductionCents: bigint;
+  taxBreakdown: TaxBreakdown | null;
+}
+
+export type RecurringTemplateReadModel = RecurringTransaction &
+  Partial<RecurringIncomeTaxPreview>;
 
 function currentReferenceMonth(): string {
   const now = new Date();
@@ -159,8 +176,22 @@ export class RecurringService {
     return { generated, skipped };
   }
 
-  async findAll(userId: string, filters: RecurringFilters = {}): Promise<RecurringTransaction[]> {
-    return this.recurringRepository.findAllByUser(userId, filters);
+  async findAll(
+    userId: string,
+    filters: RecurringFilters = {},
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponse<RecurringTemplateReadModel>> {
+    const paginated = await this.recurringRepository.findAllByUser(
+      userId,
+      filters,
+      pagination,
+    );
+    const items = await this.enrichTemplatesForRead(userId, paginated.items);
+
+    return {
+      ...paginated,
+      items,
+    };
   }
 
   async findActiveForMonth(
@@ -170,10 +201,11 @@ export class RecurringService {
     return this.recurringRepository.findActiveForMonth(userId, month);
   }
 
-  async findById(id: string, userId: string): Promise<RecurringTransaction> {
+  async findById(id: string, userId: string): Promise<RecurringTemplateReadModel> {
     const template = await this.recurringRepository.findById(id, userId);
     if (!template) throw new EntityNotFoundException('RecurringTransaction', id);
-    return template;
+    const [enriched] = await this.enrichTemplatesForRead(userId, [template]);
+    return enriched;
   }
 
   async update(
@@ -330,5 +362,59 @@ export class RecurringService {
     const lastDay = new Date(Date.UTC(year, m, 0)).getUTCDate();
     const day = Math.min(dayOfMonth, lastDay);
     return new Date(Date.UTC(year, m - 1, day, 12, 0, 0));
+  }
+
+  private async enrichTemplatesForRead(
+    userId: string,
+    templates: RecurringTransaction[],
+  ): Promise<RecurringTemplateReadModel[]> {
+    const hasIncomeTemplateWithAutoDeductions = templates.some(
+      (template) =>
+        template.type === TransactionType.INCOME && template.applyTaxDeductions,
+    );
+
+    const employmentType = hasIncomeTemplateWithAutoDeductions
+      ? (await this.usersService.findById(userId)).employmentType
+      : null;
+
+    const currentYear = parseInt(currentReferenceMonth().slice(0, 4), 10);
+
+    return Promise.all(
+      templates.map((template) =>
+        this.enrichTemplateForRead(template, employmentType, currentYear),
+      ),
+    );
+  }
+
+  private async enrichTemplateForRead(
+    template: RecurringTransaction,
+    employmentType: EmploymentType | null,
+    year: number,
+  ): Promise<RecurringTemplateReadModel> {
+    if (template.type !== TransactionType.INCOME) {
+      return template;
+    }
+
+    const grossAmountCents = template.amountCents;
+    let netAmountCents = grossAmountCents;
+    let taxBreakdown: TaxBreakdown | null = null;
+
+    if (template.applyTaxDeductions && employmentType === EmploymentType.CLT) {
+      taxBreakdown = await this.taxCalculatorService.computeCLT(
+        grossAmountCents,
+        year,
+        template.dependents,
+      );
+      netAmountCents = taxBreakdown.netCents;
+    }
+
+    return {
+      ...template,
+      amountCents: netAmountCents,
+      grossAmountCents,
+      netAmountCents,
+      deductionCents: grossAmountCents - netAmountCents,
+      taxBreakdown,
+    };
   }
 }

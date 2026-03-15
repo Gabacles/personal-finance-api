@@ -319,6 +319,94 @@ describe('RecurringService', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // findAll
+  // ---------------------------------------------------------------------------
+
+  describe('findAll', () => {
+    it('returns effective net amount and tax breakdown for CLT INCOME templates with applyTaxDeductions=true', async () => {
+      const grossCents = BigInt(800000);
+      const netCents = BigInt(650000);
+      recurringRepo.findAllByUser.mockResolvedValue({
+        items: [
+          mockTemplate({
+            type: TransactionType.INCOME,
+            amountCents: grossCents,
+            applyTaxDeductions: true,
+            dependents: 1,
+          }),
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      } as any);
+      usersService.findById.mockResolvedValue({ id: 'user-1', employmentType: EmploymentType.CLT } as any);
+      taxCalculatorService.computeCLT.mockResolvedValue({
+        grossCents,
+        inssCents: 80000n,
+        irrfCents: 70000n,
+        dependentAllowanceTotalCents: 24274n,
+        netCents,
+        inssSlices: [],
+        irrfDetail: {
+          taxableBasisCents: 0n,
+          rateBps: 0,
+          deductionAppliedCents: 0n,
+          monthlyReductionCents: 0n,
+          totalCents: 0n,
+        },
+      } as any);
+
+      const result = await service.findAll(
+        'user-1',
+        { type: TransactionType.INCOME },
+        { page: 1, limit: 20 },
+      );
+
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].amountCents).toBe(netCents);
+      expect(result.items[0].grossAmountCents).toBe(grossCents);
+      expect(result.items[0].netAmountCents).toBe(netCents);
+      expect(result.items[0].deductionCents).toBe(grossCents - netCents);
+      expect(result.items[0].taxBreakdown).toBeDefined();
+    });
+
+    it('keeps gross amount for PJ users even when applyTaxDeductions=true', async () => {
+      const grossCents = BigInt(800000);
+      recurringRepo.findAllByUser.mockResolvedValue({
+        items: [
+          mockTemplate({
+            type: TransactionType.INCOME,
+            amountCents: grossCents,
+            applyTaxDeductions: true,
+          }),
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      } as any);
+      usersService.findById.mockResolvedValue({ id: 'user-1', employmentType: EmploymentType.PJ } as any);
+
+      const result = await service.findAll(
+        'user-1',
+        { type: TransactionType.INCOME },
+        { page: 1, limit: 20 },
+      );
+
+      expect(result.items[0].amountCents).toBe(grossCents);
+      expect(result.items[0].grossAmountCents).toBe(grossCents);
+      expect(result.items[0].netAmountCents).toBe(grossCents);
+      expect(result.items[0].deductionCents).toBe(0n);
+      expect(result.items[0].taxBreakdown).toBeNull();
+      expect(taxCalculatorService.computeCLT).not.toHaveBeenCalled();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // findById
   // ---------------------------------------------------------------------------
 
@@ -336,7 +424,7 @@ describe('RecurringService', () => {
       recurringRepo.findById.mockResolvedValue(tpl as any);
 
       const result = await service.findById('rt-1', 'user-1');
-      expect(result).toBe(tpl);
+      expect(result).toMatchObject(tpl);
     });
   });
 

@@ -224,6 +224,40 @@ describe('IncomeService', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // findAll
+  // ---------------------------------------------------------------------------
+
+  describe('findAll', () => {
+    it('returns paginated income entries', async () => {
+      const entry = mockEntry();
+      incomeRepo.findAllByUser.mockResolvedValue({
+        items: [entry],
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      } as any);
+
+      const result = await service.findAll(
+        'user-1',
+        { referenceMonth: '2026-03' },
+        { page: 1, limit: 20 },
+      );
+
+      expect(incomeRepo.findAllByUser).toHaveBeenCalledWith(
+        'user-1',
+        { referenceMonth: '2026-03' },
+        { page: 1, limit: 20 },
+      );
+      expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+      expect(result.totalPages).toBe(1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // findById
   // ---------------------------------------------------------------------------
 

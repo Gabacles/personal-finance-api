@@ -23,6 +23,8 @@ export interface MonthlySummary {
   totalGrossCents: bigint;
   totalNetIncomeCents: bigint;
   totalDeductionCents: bigint;
+  manualDeductionCents: bigint;
+  recurringDeductionCents: bigint;
   // Expenses by origin
   totalExpenseCents: bigint;
   oneTimeCents: bigint;
@@ -60,6 +62,7 @@ export class SummaryService {
           category: true,
           paymentMethod: { include: { creditCard: true } },
           installmentPlan: true,
+          recurringTransaction: true,
         },
         orderBy: { transactionDate: 'desc' },
       }),
@@ -94,7 +97,7 @@ export class SummaryService {
       (sum, entry) => sum + entry.grossCents,
       0n,
     );
-    const totalDeductionCents = incomeEntries.reduce((sum, entry) => {
+    const incomeEntriesDeductionCents = incomeEntries.reduce((sum, entry) => {
       const entryDeductionTotal = (entry.deductions ?? []).reduce(
         (entrySum: bigint, d: { amountCents: bigint }) =>
           entrySum + d.amountCents,
@@ -102,6 +105,22 @@ export class SummaryService {
       );
       return sum + entryDeductionTotal;
     }, 0n);
+
+    const recurringDeductionCents = transactions
+      .filter(
+        (t) =>
+          t.type === TransactionType.INCOME &&
+          t.origin === TransactionOrigin.RECURRING &&
+          !!t.recurringTransaction?.applyTaxDeductions,
+      )
+      .reduce((sum, transaction) => {
+        const grossTemplateAmount =
+          transaction.recurringTransaction?.amountCents ?? transaction.amountCents;
+        const deduction = grossTemplateAmount - transaction.amountCents;
+        return sum + (deduction > 0n ? deduction : 0n);
+      }, 0n);
+    const totalDeductionCents =
+      incomeEntriesDeductionCents + recurringDeductionCents;
 
     // Recurring income transactions generated for this month
     const recurringIncomeCents = transactions
@@ -157,6 +176,8 @@ export class SummaryService {
       totalGrossCents,
       totalNetIncomeCents,
       totalDeductionCents,
+      manualDeductionCents: incomeEntriesDeductionCents,
+      recurringDeductionCents,
       totalExpenseCents,
       oneTimeCents,
       installmentCents,

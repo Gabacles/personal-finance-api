@@ -743,17 +743,57 @@ Creates a recurring transaction template.
 
 ### `GET /api/v1/recurring-transactions`
 
-Lists recurring templates.
+Lists recurring templates with pagination.
 
-**Query params:** `type`, `is_active`, `category_id`, `payment_method_id`
+**Query params:** `type`, `isActive`, `page`, `limit`
 
-**Response `200`:** Paginated list of templates.
+When `type=INCOME`, the API returns an **effective** `amountCents`:
+- CLT + `applyTaxDeductions=true` -> `amountCents` is returned as **net** value.
+- PJ/OTHER or `applyTaxDeductions=false` -> `amountCents` remains the configured gross value.
+
+For INCOME templates, the response also includes:
+- `grossAmountCents`
+- `netAmountCents`
+- `deductionCents`
+- `taxBreakdown` (full INSS/IRRF preview when automatic deductions apply for CLT)
+
+**Response `200`:**
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "type": "INCOME",
+        "description": "Salário fixo",
+        "amountCents": 582231,
+        "grossAmountCents": 750000,
+        "netAmountCents": 582231,
+        "deductionCents": 167769,
+        "applyTaxDeductions": true,
+        "dependents": 0,
+        "taxBreakdown": {
+          "grossCents": 750000,
+          "inssCents": 85150,
+          "irrfCents": 82619,
+          "dependentAllowanceTotalCents": 0,
+          "netCents": 582231
+        }
+      }
+    ],
+    "total": 17,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
 
 ---
 
 ### `GET /api/v1/recurring-transactions/:id`
 
-Returns a single template.
+Returns a single template with the same effective amount and tax preview semantics used by the list endpoint.
 
 ---
 
@@ -899,11 +939,33 @@ Registers an income entry. Auto-calculates INSS and IRRF for CLT users. Creates 
 
 ### `GET /api/v1/income`
 
-Lists income entries filtered by period.
+Lists income entries with pagination.
 
-**Query params:** `reference_month`, `date_from`, `date_to`, `page`, `limit`
+**Query params:** `referenceMonth` (YYYY-MM), `page`, `limit`
 
-**Response `200`:** Paginated list with deduction breakdown and net amount per entry.
+**Response `200`:**
+```json
+{
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "referenceMonth": "2026-03",
+        "grossCents": 800000,
+        "netCents": 604044,
+        "deductions": [
+          { "description": "INSS", "amountCents": 77672, "isAutomatic": true },
+          { "description": "IRRF", "amountCents": 85284, "isAutomatic": true }
+        ]
+      }
+    ],
+    "total": 5,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 1
+  }
+}
+```
 
 ---
 
@@ -944,6 +1006,14 @@ Returns the complete financial picture for a given reference month.
 
 **Important:** This endpoint has an internal write side-effect. Before aggregating, it idempotently generates any missing recurring transactions for the requested month. The client is not aware of this.
 
+`total_deductions_cents` includes:
+- deductions from manual income entries (`/income`), and
+- automatic deductions from recurring INCOME templates when `applyTaxDeductions=true` (difference between gross template amount and generated net transaction amount).
+
+The API also exposes:
+- `manualDeductionCents` for deductions coming from manual income entries.
+- `recurringDeductionCents` for deductions coming from recurring INCOME templates with automatic taxes.
+
 **Response `200`:**
 ```json
 {
@@ -952,6 +1022,8 @@ Returns the complete financial picture for a given reference month.
     "income": {
       "gross_cents": 800000,
       "total_deductions_cents": 195956,
+      "manual_deductions_cents": 28187,
+      "recurring_deductions_cents": 167769,
       "net_cents": 604044,
       "entries_count": 1
     },
@@ -1019,6 +1091,8 @@ Returns the current month summary and a forward projection. The primary entry po
       "income": {
         "gross_cents": 800000,
         "total_deductions_cents": 195956,
+        "manual_deductions_cents": 28187,
+        "recurring_deductions_cents": 167769,
         "net_cents": 604044
       },
       "expenses": {
