@@ -639,6 +639,7 @@ All monetary values are in **BRL cents** (integer). Dates use **YYYY-MM-DD**, re
 ```
 
 Notes:
+- You can register multiple income entries in the same month (e.g., salary + freelance + bonus).
 - `applyTaxDeductions` defaults to `true`. For CLT users, this controls whether automatic INSS/IRRF deductions are applied.
 - For `PJ`/`OTHER`, automatic deductions are not applied regardless of this flag.
 - `categoryId` is optional and must reference an `INCOME` category (user-owned or system).

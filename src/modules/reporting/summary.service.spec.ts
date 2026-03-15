@@ -30,14 +30,14 @@ describe('SummaryService', () => {
   let recurringServiceMock: { generateForMonth: jest.Mock };
   let prismaMock: {
     transaction: { findMany: jest.Mock };
-    incomeEntry: { findFirst: jest.Mock };
+    incomeEntry: { findMany: jest.Mock };
   };
 
   beforeEach(async () => {
     recurringServiceMock = { generateForMonth: jest.fn() };
     prismaMock = {
       transaction: { findMany: jest.fn() },
-      incomeEntry: { findFirst: jest.fn() },
+      incomeEntry: { findMany: jest.fn() },
     };
 
     recurringServiceMock.generateForMonth.mockResolvedValue({
@@ -63,7 +63,7 @@ describe('SummaryService', () => {
   describe('getForMonth', () => {
     it('month with no transactions and no income returns all-zero fields', async () => {
       prismaMock.transaction.findMany.mockResolvedValue([]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -87,7 +87,7 @@ describe('SummaryService', () => {
       prismaMock.transaction.findMany.mockResolvedValue([
         makeExpenseTx(5000n, TransactionOrigin.ONE_TIME),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -102,7 +102,7 @@ describe('SummaryService', () => {
         makeExpenseTx(10000n, TransactionOrigin.INSTALLMENT),
         makeExpenseTx(2000n, TransactionOrigin.INSTALLMENT),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -116,7 +116,7 @@ describe('SummaryService', () => {
       prismaMock.transaction.findMany.mockResolvedValue([
         makeExpenseTx(8000n, TransactionOrigin.RECURRING),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -130,11 +130,13 @@ describe('SummaryService', () => {
       prismaMock.transaction.findMany.mockResolvedValue([
         makeExpenseTx(200000n, TransactionOrigin.ONE_TIME),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue({
-        grossCents: 600000n,
-        netCents: 500000n,
-        deductions: [{ amountCents: 60000n }, { amountCents: 40000n }],
-      });
+      prismaMock.incomeEntry.findMany.mockResolvedValue([
+        {
+          grossCents: 600000n,
+          netCents: 500000n,
+          deductions: [{ amountCents: 60000n }, { amountCents: 40000n }],
+        },
+      ]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -160,7 +162,7 @@ describe('SummaryService', () => {
           category: { name: 'Transport' },
         }),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -187,7 +189,7 @@ describe('SummaryService', () => {
           paymentMethod: { name: 'Visa' },
         }),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -210,7 +212,7 @@ describe('SummaryService', () => {
         },
         makeExpenseTx(50000n, TransactionOrigin.ONE_TIME),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -220,7 +222,7 @@ describe('SummaryService', () => {
       expect(result.balanceCents).toBe(100000n);
     });
 
-    it('RECURRING INCOME is combined with incomeEntry netCents in totalNetIncomeCents', async () => {
+    it('RECURRING INCOME is combined with manual income entries netCents in totalNetIncomeCents', async () => {
       prismaMock.transaction.findMany.mockResolvedValue([
         {
           type: TransactionType.INCOME,
@@ -233,11 +235,13 @@ describe('SummaryService', () => {
           installmentPlan: null,
         },
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue({
-        grossCents: 600000n,
-        netCents: 500000n,
-        deductions: [{ amountCents: 100000n }],
-      });
+      prismaMock.incomeEntry.findMany.mockResolvedValue([
+        {
+          grossCents: 600000n,
+          netCents: 500000n,
+          deductions: [{ amountCents: 100000n }],
+        },
+      ]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -261,7 +265,7 @@ describe('SummaryService', () => {
         },
         makeExpenseTx(20000n, TransactionOrigin.ONE_TIME),
       ]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -275,7 +279,7 @@ describe('SummaryService', () => {
         skipped: 1,
       });
       prismaMock.transaction.findMany.mockResolvedValue([]);
-      prismaMock.incomeEntry.findFirst.mockResolvedValue(null);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([]);
 
       const result = await service.getForMonth(USER_ID, MONTH);
 
@@ -285,6 +289,29 @@ describe('SummaryService', () => {
       );
       expect(result.recurringGenerated).toBe(3);
       expect(result.recurringSkipped).toBe(1);
+    });
+
+    it('aggregates multiple income entries in the same month', async () => {
+      prismaMock.transaction.findMany.mockResolvedValue([]);
+      prismaMock.incomeEntry.findMany.mockResolvedValue([
+        {
+          grossCents: 500000n,
+          netCents: 430000n,
+          deductions: [{ amountCents: 70000n }],
+        },
+        {
+          grossCents: 200000n,
+          netCents: 180000n,
+          deductions: [{ amountCents: 20000n }],
+        },
+      ]);
+
+      const result = await service.getForMonth(USER_ID, MONTH);
+
+      expect(result.totalGrossCents).toBe(700000n);
+      expect(result.totalDeductionCents).toBe(90000n);
+      expect(result.totalNetIncomeCents).toBe(610000n);
+      expect(result.incomeEntries).toHaveLength(2);
     });
   });
 });

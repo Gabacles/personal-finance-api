@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { TransactionOrigin, TransactionType } from '@prisma/client';
+import { EmploymentType, TransactionOrigin, TransactionType } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
+import { TaxCalculatorService } from '../income/tax-calculator.service';
 import { RecurringService } from '../recurring/recurring.service';
+import { UsersService } from '../users/users.service';
 import { MonthlySummary, SummaryService } from './summary.service';
 
 export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
@@ -40,6 +42,8 @@ export class DashboardService {
     private readonly summaryService: SummaryService,
     private readonly recurringService: RecurringService,
     private readonly prisma: PrismaService,
+    private readonly taxCalculatorService: TaxCalculatorService,
+    private readonly usersService: UsersService,
   ) {}
 
   async get(
@@ -56,7 +60,7 @@ export class DashboardService {
           i === 0 ? 'HIGH' : i <= 2 ? 'MEDIUM' : 'LOW';
 
         // Already-committed transactions and active templates for this month
-        const [installmentTxns, oneTimeTxns, activeTemplates, committedIncomeEntry] =
+        const [installmentTxns, oneTimeTxns, activeTemplates, committedIncomeEntries] =
           await Promise.all([
             this.prisma.transaction.findMany({
               where: {
@@ -78,7 +82,7 @@ export class DashboardService {
               select: { amountCents: true },
             }),
             this.recurringService.findActiveForMonth(userId, futureMonth),
-            this.prisma.incomeEntry.findFirst({
+            this.prisma.incomeEntry.findMany({
               where: { userId, referenceMonth: futureMonth, deletedAt: null },
               select: { netCents: true },
             }),
@@ -97,12 +101,44 @@ export class DashboardService {
         const recurringExpenseCents = activeTemplates
           .filter((t) => t.type === TransactionType.EXPENSE)
           .reduce((s, t) => s + t.amountCents, 0n);
-        const recurringIncomeCents = activeTemplates
-          .filter((t) => t.type === TransactionType.INCOME)
-          .reduce((s, t) => s + t.amountCents, 0n);
+        const recurringIncomeTemplates = activeTemplates.filter(
+          (t) => t.type === TransactionType.INCOME,
+        );
+        const hasTemplatesWithTaxDeductions = recurringIncomeTemplates.some(
+          (t) => t.applyTaxDeductions,
+        );
+        const userEmploymentType = hasTemplatesWithTaxDeductions
+          ? (await this.usersService.findById(userId)).employmentType
+          : null;
 
-        // Already-registered income entry for this future month
-        const committedIncomeCents = committedIncomeEntry?.netCents ?? 0n;
+        const recurringIncomeValues = await Promise.all(
+          recurringIncomeTemplates.map(async (template) => {
+            if (
+              !template.applyTaxDeductions ||
+              userEmploymentType !== EmploymentType.CLT
+            ) {
+              return template.amountCents;
+            }
+
+            const year = Number.parseInt(futureMonth.slice(0, 4), 10);
+            const taxBreakdown = await this.taxCalculatorService.computeCLT(
+              template.amountCents,
+              year,
+              template.dependents,
+            );
+            return taxBreakdown.netCents;
+          }),
+        );
+        const recurringIncomeCents = recurringIncomeValues.reduce(
+          (sum, amount) => sum + amount,
+          0n,
+        );
+
+        // Already-registered income entries for this future month
+        const committedIncomeCents = committedIncomeEntries.reduce(
+          (sum, entry) => sum + entry.netCents,
+          0n,
+        );
 
         const projectedExpenseCents = installmentCents + oneTimeCents + recurringExpenseCents;
         const projectedIncomeCents =

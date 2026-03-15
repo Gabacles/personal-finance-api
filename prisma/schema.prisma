@@ -254,7 +254,6 @@ model IncomeEntry {
   deductions IncomeDeduction[]
   transactions Transaction[]
 
-  @@unique([userId, referenceMonth])
   @@index([userId, referenceMonth])
   @@map("income_entries")
 }

@@ -44,18 +44,6 @@ export class IncomeService {
       );
     }
 
-    // Check for duplicate
-    const existing = await this.incomeRepository.findByMonth(
-      userId,
-      dto.referenceMonth,
-    );
-    if (existing) {
-      throw new BusinessRuleException(
-        'INCOME_ALREADY_REGISTERED',
-        `An income entry already exists for month ${dto.referenceMonth}`,
-      );
-    }
-
     // Compute auto deductions for CLT employees
     let taxBreakdown: TaxBreakdown | null = null;
     if (applyTaxDeductions && user.employmentType === EmploymentType.CLT) {

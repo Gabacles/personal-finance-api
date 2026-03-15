@@ -1059,7 +1059,7 @@ Returns the current month summary and a forward projection. The primary entry po
     ],
     "meta": {
       "generated_at": "2026-03-07T14:30:00Z",
-      "projection_basis": "Open installment plans, already-registered one-time expenses, active recurring templates, and income entries already registered for future months."
+      "projection_basis": "Open installment plans, already-registered one-time expenses, active recurring templates, and income entries already registered for future months. Recurring INCOME templates marked with applyTaxDeductions=true are projected using net amount for CLT users."
     }
   }
 }

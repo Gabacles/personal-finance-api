@@ -26,16 +26,6 @@ export class IncomeRepository {
     });
   }
 
-  async findByMonth(
-    userId: string,
-    referenceMonth: string,
-  ): Promise<IncomeEntryWithDeductions | null> {
-    return this.prisma.incomeEntry.findFirst({
-      where: { userId, referenceMonth, deletedAt: null },
-      include: { deductions: true },
-    });
-  }
-
   async findById(
     id: string,
     userId: string,

@@ -82,7 +82,7 @@ describe('IncomeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         IncomeService,
-        { provide: IncomeRepository, useValue: { create: jest.fn(), findAllByUser: jest.fn(), findByMonth: jest.fn(), findById: jest.fn(), update: jest.fn() } },
+        { provide: IncomeRepository, useValue: { create: jest.fn(), findAllByUser: jest.fn(), findById: jest.fn(), update: jest.fn() } },
         { provide: IncomeDeductionRepository, useValue: { createMany: jest.fn(), deleteByEntry: jest.fn(), deleteAutoByEntry: jest.fn(), findByEntry: jest.fn() } },
         { provide: TaxCalculatorService, useValue: { computeCLT: jest.fn() } },
         { provide: UsersService, useValue: { findById: jest.fn() } },
@@ -107,7 +107,6 @@ describe('IncomeService', () => {
 
   describe('register', () => {
     beforeEach(() => {
-      incomeRepo.findByMonth.mockResolvedValue(null); // no existing entry
       incomeRepo.create.mockResolvedValue(mockEntry() as any);
       incomeRepo.findById.mockResolvedValue(mockEntry() as any);
       deductionRepo.createMany.mockResolvedValue([]);
@@ -146,18 +145,6 @@ describe('IncomeService', () => {
       });
 
       expect(taxService.computeCLT).not.toHaveBeenCalled();
-    });
-
-    it('throws INCOME_ALREADY_REGISTERED when month already has an entry', async () => {
-      usersService.findById.mockResolvedValue(MOCK_USER_CLT as any);
-      incomeRepo.findByMonth.mockResolvedValue(mockEntry() as any);
-
-      await expect(
-        service.register('user-1', {
-          referenceMonth: '2026-03',
-          grossCents: 700_000,
-        }),
-      ).rejects.toThrow(BusinessRuleException);
     });
 
     it('throws NET_INCOME_NOT_POSITIVE when custom deductions exceed gross (PJ)', async () => {

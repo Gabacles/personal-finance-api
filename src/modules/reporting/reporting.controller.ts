@@ -73,7 +73,7 @@ export class ReportingController {
           type: 'number',
           example: 754044,
           description:
-            'Sum of incomeEntry.netCents (POST /income) and all RECURRING INCOME transactions generated for this month.',
+            'Sum of all incomeEntries.netCents (POST /income) and all RECURRING INCOME transactions generated for this month.',
         },
         totalDeductionCents: { type: 'number', example: 45956 },
         totalExpenseCents: { type: 'number', example: 423500 },
@@ -110,7 +110,7 @@ export class ReportingController {
           },
         },
         transactions: { type: 'array', items: { type: 'object' } },
-        incomeEntry: { type: 'object', nullable: true },
+        incomeEntries: { type: 'array', items: { type: 'object' } },
       },
     },
   })
@@ -145,7 +145,8 @@ export class ReportingController {
             totalNetIncomeCents: {
               type: 'number',
               example: 754044,
-              description: 'incomeEntry.netCents + recurringIncomeCents',
+              description:
+                'sum(incomeEntries.netCents) + recurringIncomeCents, where recurringIncomeCents uses net amounts when recurring template has applyTaxDeductions=true for CLT users.',
             },
             totalDeductionCents: { type: 'number', example: 45956 },
             totalExpenseCents: { type: 'number', example: 423500 },
@@ -181,7 +182,7 @@ export class ReportingController {
               },
             },
             transactions: { type: 'array', items: { type: 'object' } },
-            incomeEntry: { type: 'object', nullable: true },
+            incomeEntries: { type: 'array', items: { type: 'object' } },
           },
         },
         projections: {
@@ -200,8 +201,18 @@ export class ReportingController {
                   installmentCents: { type: 'number', example: 100000 },
                   oneTimeCents: { type: 'number', example: 50000 },
                   recurringExpenseCents: { type: 'number', example: 200000 },
-                  recurringIncomeCents: { type: 'number', example: 300000 },
-                  committedIncomeCents: { type: 'number', example: 200000 },
+                  recurringIncomeCents: {
+                    type: 'number',
+                    example: 300000,
+                    description:
+                      'Projected recurring income from active templates for this month. For CLT users, templates with applyTaxDeductions=true are projected as net amounts.',
+                  },
+                  committedIncomeCents: {
+                    type: 'number',
+                    example: 200000,
+                    description:
+                      'Income entries already created for this future month (sum of incomeEntries.netCents).',
+                  },
                 },
               },
             },

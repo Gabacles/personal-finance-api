@@ -37,7 +37,7 @@ export interface MonthlySummary {
   byPaymentMethod: PaymentMethodBreakdown[];
   // Raw data
   transactions: any[];
-  incomeEntry: any | null;
+  incomeEntries: any[];
 }
 
 @Injectable()
@@ -52,8 +52,8 @@ export class SummaryService {
     const { generated: recurringGenerated, skipped: recurringSkipped } =
       await this.recurringService.generateForMonth(userId, month);
 
-    // 2. Fetch transactions + income entry in parallel
-    const [transactions, incomeEntry] = await Promise.all([
+    // 2. Fetch transactions + income entries in parallel
+    const [transactions, incomeEntries] = await Promise.all([
       this.prisma.transaction.findMany({
         where: { userId, referenceMonth: month, deletedAt: null },
         include: {
@@ -63,9 +63,10 @@ export class SummaryService {
         },
         orderBy: { transactionDate: 'desc' },
       }),
-      this.prisma.incomeEntry.findFirst({
+      this.prisma.incomeEntry.findMany({
         where: { userId, referenceMonth: month, deletedAt: null },
         include: { deductions: true },
+        orderBy: { createdAt: 'desc' },
       }),
     ]);
 
@@ -89,11 +90,18 @@ export class SummaryService {
       .reduce((s, t) => s + t.amountCents, 0n);
 
     // 4. Income totals
-    const totalGrossCents = incomeEntry?.grossCents ?? 0n;
-    const totalDeductionCents = (incomeEntry?.deductions ?? []).reduce(
-      (s: bigint, d: { amountCents: bigint }) => s + d.amountCents,
+    const totalGrossCents = incomeEntries.reduce(
+      (sum, entry) => sum + entry.grossCents,
       0n,
     );
+    const totalDeductionCents = incomeEntries.reduce((sum, entry) => {
+      const entryDeductionTotal = (entry.deductions ?? []).reduce(
+        (entrySum: bigint, d: { amountCents: bigint }) =>
+          entrySum + d.amountCents,
+        0n,
+      );
+      return sum + entryDeductionTotal;
+    }, 0n);
 
     // Recurring income transactions generated for this month
     const recurringIncomeCents = transactions
@@ -104,7 +112,11 @@ export class SummaryService {
       )
       .reduce((s, t) => s + t.amountCents, 0n);
 
-    const totalNetIncomeCents = (incomeEntry?.netCents ?? 0n) + recurringIncomeCents;
+    const incomeEntriesNetCents = incomeEntries.reduce(
+      (sum, entry) => sum + entry.netCents,
+      0n,
+    );
+    const totalNetIncomeCents = incomeEntriesNetCents + recurringIncomeCents;
 
     // 5. By category (expenses only)
     const categoryMap = new Map<string, CategoryBreakdown>();
@@ -154,7 +166,7 @@ export class SummaryService {
       byCategory: Array.from(categoryMap.values()),
       byPaymentMethod: Array.from(pmMap.values()),
       transactions,
-      incomeEntry,
+      incomeEntries,
     };
   }
 }

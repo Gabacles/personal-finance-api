@@ -66,6 +66,45 @@ const incomeEntrySchema = {
   },
 };
 
+const incomeEstimateSchema = {
+  type: 'object',
+  properties: {
+    grossCents: { type: 'number', example: 750000 },
+    inssCents: { type: 'number', example: 85150 },
+    irrfCents: { type: 'number', example: 82619 },
+    dependentAllowanceTotalCents: { type: 'number', example: 0 },
+    netCents: { type: 'number', example: 582231 },
+    inssSlices: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          rateBps: { type: 'number', example: 750 },
+          appliedToCents: { type: 'number', example: 162100 },
+          contributionCents: { type: 'number', example: 12157 },
+        },
+      },
+    },
+    irrfDetail: {
+      type: 'object',
+      properties: {
+        taxableBasisCents: { type: 'number', example: 664850 },
+        rateBps: { type: 'number', example: 2750 },
+        deductionAppliedCents: { type: 'number', example: 90873 },
+        monthlyReductionCents: { type: 'number', example: 9341 },
+        totalCents: { type: 'number', example: 82619 },
+      },
+    },
+  },
+};
+
+const incomeEstimateEnvelopeSchema = {
+  type: 'object',
+  properties: {
+    data: incomeEstimateSchema,
+  },
+};
+
 const incomeEntryEnvelopeSchema = {
   type: 'object',
   properties: {
@@ -99,37 +138,7 @@ export class IncomeController {
   })
   @ApiOkResponse({
     description: 'Tax estimation for a gross salary.',
-    schema: {
-      type: 'object',
-      properties: {
-        grossCents: { type: 'number', example: 750000 },
-        inssCents: { type: 'number', example: 85150 },
-        irrfCents: { type: 'number', example: 82619 },
-        dependentAllowanceTotalCents: { type: 'number', example: 0 },
-        netCents: { type: 'number', example: 582231 },
-        inssSlices: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              rateBps: { type: 'number', example: 750 },
-              appliedToCents: { type: 'number', example: 162100 },
-              contributionCents: { type: 'number', example: 12157 },
-            },
-          },
-        },
-        irrfDetail: {
-          type: 'object',
-          properties: {
-            taxableBasisCents: { type: 'number', example: 664850 },
-            rateBps: { type: 'number', example: 2750 },
-            deductionAppliedCents: { type: 'number', example: 90873 },
-            monthlyReductionCents: { type: 'number', example: 9341 },
-            totalCents: { type: 'number', example: 82619 },
-          },
-        },
-      },
-    },
+    schema: incomeEstimateEnvelopeSchema,
   })
   @ApiBadRequestResponse({ description: 'Invalid query parameters.' })
   estimate(@Query() query: EstimateTaxDto) {
@@ -144,7 +153,11 @@ export class IncomeController {
   @Post()
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register income for a reference month' })
+  @ApiOperation({
+    summary: 'Register a manual income entry for a reference month',
+    description:
+      'Allows multiple income entries in the same month (e.g., salary + freelance + bonus).',
+  })
   @ApiCreatedResponse({
     description: 'Income entry created successfully.',
     schema: incomeEntryEnvelopeSchema,
@@ -160,9 +173,13 @@ export class IncomeController {
   @Get()
   @ApiBearerAuth('jwt')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'List all income entries' })
+  @ApiOperation({
+    summary: 'List all income entries',
+    description:
+      'Returns all non-deleted income entries for the authenticated user, including deductions.',
+  })
   @ApiOkResponse({
-    description: 'List of income entries.',
+    description: 'List of income entries (multiple entries may exist for the same month).',
     schema: incomeEntryListEnvelopeSchema,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token.' })
