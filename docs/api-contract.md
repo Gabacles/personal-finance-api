@@ -323,7 +323,7 @@ Soft-deactivates a payment method.
 
 ### `GET /api/v1/payment-methods/:id/statement`
 
-Returns all transactions for a specific card and reference month, with due date and total.
+Returns all transactions for a specific card and reference month, plus a credit-limit snapshot for charges already committed from that month onward.
 
 **Query params:**
 
@@ -335,40 +335,47 @@ Returns all transactions for a specific card and reference month, with due date 
 ```json
 {
   "data": {
-    "payment_method_id": "uuid",
-    "label": "Nubank Gold",
-    "reference_month": "2026-03",
-    "due_date": "2026-03-12",
-    "total_cents": 84500,
-    "currency": "BRL",
+    "paymentMethod": {
+      "id": "uuid",
+      "userId": "uuid",
+      "name": "Nubank Gold",
+      "type": "CREDIT_CARD",
+      "creditCard": {
+        "id": "uuid",
+        "paymentMethodId": "uuid",
+        "closingDay": 5,
+        "dueDay": 12,
+        "creditLimitCents": 500000
+      }
+    },
+    "referenceMonth": "2026-03",
+    "totalCents": 50000,
+    "committedLimitCents": 500000,
+    "availableLimitCents": 0,
     "transactions": [
       {
         "id": "uuid",
-        "description": "Supermercado Extra",
-        "amount_cents": 25000,
-        "transaction_date": "2026-02-28",
-        "category": { "id": "uuid", "name": "Alimentação" },
-        "installment_info": null,
-        "is_recurring": false
-      },
-      {
-        "id": "uuid",
         "description": "iPhone 15 Pro",
-        "amount_cents": 50000,
-        "transaction_date": "2026-02-20",
-        "category": { "id": "uuid", "name": "Eletrônicos" },
-        "installment_info": {
-          "plan_id": "uuid",
-          "installment_number": 2,
-          "total_installments": 12,
-          "total_amount_cents": 600000
-        },
-        "is_recurring": false
+        "amountCents": 50000,
+        "transactionDate": "2026-02-20T00:00:00.000Z",
+        "referenceMonth": "2026-03",
+        "origin": "INSTALLMENT",
+        "installmentPlan": {
+          "id": "uuid",
+          "totalAmountCents": 500000,
+          "installmentCount": 10
+        }
       }
     ]
   }
 }
 ```
+
+**Semantics:**
+- `totalCents` = amount billed in the requested statement month only.
+- `committedLimitCents` = sum of all non-deleted expense transactions for the same card with `referenceMonth >= requested month`.
+- `availableLimitCents` = configured `creditLimitCents - committedLimitCents`; `null` when the card has no configured credit limit.
+- Installment purchases therefore consume the full card limit immediately, even though only one installment appears in the current statement.
 
 **Status codes:** `200` · `400` Invalid month format · `404` Card not found
 

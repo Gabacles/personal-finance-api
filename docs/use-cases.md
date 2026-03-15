@@ -514,11 +514,11 @@ Use cases are grouped by module and ordered by implementation priority within ea
 **Phase:** 4 — Reporting  
 **Flow:** R
 
-**Goal:** Return all transactions assigned to a specific card for a given statement month, with total and due date.
+**Goal:** Return all transactions assigned to a specific card for a given statement month, plus the card-limit snapshot already committed from that month onward.
 
 **Input:** `payment_method_id`, `reference_month`
 
-**Output:** Card label, due date for the statement, total amount, and itemized transaction list with installment context
+**Output:** Card data, statement total, `committed_limit_cents`, `available_limit_cents`, and itemized transaction list with installment context
 
 **Dependencies:** Transactions, CreditCard
 

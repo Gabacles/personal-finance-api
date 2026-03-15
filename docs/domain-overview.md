@@ -64,6 +64,17 @@ The due date is derived from `reference_month` + `card.due_day`.
 
 This rule is applied at write time and the resulting `reference_month` is **immutable**. Changing a card's closing or due day takes effect only for future transactions. Dates are evaluated in the user's local timezone (`America/Sao_Paulo` in MVP).
 
+### Statement Total vs Card Limit Snapshot
+
+The card statement and the card limit are related, but they are not the same number:
+
+- **Statement total** = sum of transactions whose `reference_month` matches the queried month.
+- **Committed card limit** = sum of existing expense transactions for the same card with `reference_month >= queried month`.
+
+This distinction matters for installment purchases. A R$ 5.000 purchase split into 10 installments creates 10 transaction rows of R$ 500 each. The current statement shows only the installment due that month, but the card limit is committed by the full R$ 5.000 as soon as the plan is created.
+
+Recurring card expenses follow the same principle only after they are materialized into the ledger. Future recurring months that have not yet been generated do not reserve card limit in advance.
+
 ### Installment Distribution
 
 A purchase of total amount `A` split into `N` installments:

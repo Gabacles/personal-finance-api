@@ -431,27 +431,40 @@ All monetary values are in **BRL cents** (integer). Dates use **YYYY-MM-DD**, re
 <details>
 <summary><strong>GET /payment-methods/:id/statement?month=2026-03</strong></summary>
 
+Returns the billed amount for the requested statement month and a card-limit snapshot for already committed charges from that month onward.
+
 **Response (200):**
 ```json
 {
   "data": {
+    "paymentMethod": {
+      "id": "uuid",
+      "name": "Nubank Roxinho",
+      "type": "CREDIT_CARD",
+      "creditCard": {
+        "closingDay": 20,
+        "dueDay": 27,
+        "creditLimitCents": 1000000
+      }
+    },
     "referenceMonth": "2026-03",
-    "totalCents": 125000,
+    "totalCents": 50000,
+    "committedLimitCents": 500000,
+    "availableLimitCents": 500000,
     "transactions": [
       {
         "id": "uuid",
-        "description": "Supermercado Extra",
-        "amountCents": 4990,
+        "description": "Notebook (1/10)",
+        "amountCents": 50000,
         "referenceMonth": "2026-03",
-        "origin": "ONE_TIME"
+        "origin": "INSTALLMENT"
       }
-    ],
-    "categoryBreakdown": [
-      { "category": "Food", "totalCents": 4990 }
     ]
   }
 }
 ```
+
+`totalCents` is the amount billed in that statement. `committedLimitCents` includes the current statement plus future already-created charges for the same card, so an installment purchase immediately consumes its full amount from the card limit.
 </details>
 
 ### Purchases

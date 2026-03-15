@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { PaymentMethodType, TransactionOrigin } from '@prisma/client';
+import { PaymentMethodType, TransactionOrigin, TransactionType } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
 import {
   BusinessRuleException,
@@ -149,6 +149,51 @@ export class PaymentMethodsService {
       0n,
     );
 
-    return { paymentMethod: pm, referenceMonth: month, totalCents, transactions };
+    const { committedLimitCents, availableLimitCents } =
+      pm.type === PaymentMethodType.CREDIT_CARD && pm.creditCard
+        ? await this.computeCardLimitSnapshot(
+            id,
+            month,
+            pm.creditCard.creditLimitCents,
+          )
+        : {
+            committedLimitCents: null,
+            availableLimitCents: null,
+          };
+
+    return {
+      paymentMethod: pm,
+      referenceMonth: month,
+      totalCents,
+      committedLimitCents,
+      availableLimitCents,
+      transactions,
+    };
+  }
+
+  private async computeCardLimitSnapshot(
+    paymentMethodId: string,
+    fromMonth: string,
+    creditLimitCents: bigint | null,
+  ) {
+    const aggregate = await this.prisma.transaction.aggregate({
+      where: {
+        paymentMethodId,
+        type: TransactionType.EXPENSE,
+        referenceMonth: { gte: fromMonth },
+        deletedAt: null,
+      },
+      _sum: {
+        amountCents: true,
+      },
+    });
+
+    const committedLimitCents = aggregate._sum.amountCents ?? 0n;
+
+    return {
+      committedLimitCents,
+      availableLimitCents:
+        creditLimitCents === null ? null : creditLimitCents - committedLimitCents,
+    };
   }
 }

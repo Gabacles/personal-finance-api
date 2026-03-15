@@ -458,7 +458,8 @@ deduction_tables                   (standalone reference data, no user FK)
 | Net income per entry | `gross_amount_cents - SUM(income_deductions.amount_cents)` |
 | Remaining installments / amount | `COUNT / SUM` of non-deleted transactions where `installment_plan_id = X AND reference_month > current` |
 | Category spending totals | `SUM(amount_cents) GROUP BY category_id` on transactions |
-| Credit card utilization | `SUM(transactions) for current statement month` vs `credit_cards.limit_cents` |
+| Credit card statement total | `SUM(amount_cents)` where `payment_method_id = X AND reference_month = requested_month` |
+| Credit card committed limit | `SUM(amount_cents)` where `payment_method_id = X AND type = EXPENSE AND reference_month >= requested_month` |
 | Monthly summary | `SUM / GROUP BY` aggregations over transactions for a reference month |
 | Category percentages | `amount / total × 100` — application layer |
 | Dashboard projection | Open installments + active recurring templates extrapolated forward |
