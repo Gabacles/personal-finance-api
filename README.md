@@ -186,7 +186,7 @@ Tax tables are stored in the database with yearly versioning, allowing updates w
 | **API Docs**     | Swagger / OpenAPI (@nestjs/swagger)                           |
 | **Health Check** | @nestjs/terminus                                              |
 | **Testing**      | Jest (unit + e2e)                                             |
-| **Containers**   | Docker Compose (PostgreSQL)                                   |
+| **Containers**   | Docker (multi-stage API image) + Docker Compose (API + PostgreSQL) |
 | **Linting**      | ESLint + Prettier                                             |
 
 ---
@@ -229,7 +229,9 @@ personal-finance-api/
 │   ├── domain-overview.md     # Business domain analysis
 │   ├── mvp-scope.md           # MVP phasing strategy
 │   └── use-cases.md           # 29 documented use cases
-├── docker-compose.yml         # PostgreSQL container
+├── Dockerfile                 # Multi-stage API image
+├── docker-entrypoint.sh       # Startup flow (migrate + seed + start)
+├── docker-compose.yml         # Full stack orchestration (API + PostgreSQL)
 ├── TASKS.md                   # Development milestones & progress
 └── package.json
 ```
@@ -908,9 +910,8 @@ All other endpoints require a valid JWT token.
 
 ### Prerequisites
 
-- **Node.js** 18+
 - **Docker** and **Docker Compose**
-- **npm**
+- **Node.js** 18+ and **npm** (only required for local dev mode outside containers)
 
 ### 1. Clone the repository
 
@@ -919,58 +920,72 @@ git clone https://github.com/your-username/personal-finance-api.git
 cd personal-finance-api
 ```
 
-### 2. Install dependencies
+### 2. Configure environment variables
+
+Create a `.env` file in the project root (or copy from `.env.example`):
+
+```env
+POSTGRES_USER=finance_user
+POSTGRES_PASSWORD=change_me
+POSTGRES_DB=personal_finance
+POSTGRES_PORT=5432
+
+PORT=8080
+JWT_SECRET=change_this_to_a_long_random_secret_in_production
+JWT_EXPIRES_IN=7d
+TZ=America/Sao_Paulo
+```
+
+> `DATABASE_URL` is injected automatically for the API container in Docker Compose using the internal host `postgres`.
+
+### 3. Run everything with Docker (recommended)
+
+```bash
+npm run docker:up
+```
+
+What happens automatically on API startup:
+
+1. Waits for PostgreSQL health check.
+2. Runs `prisma migrate deploy`.
+3. Runs `prisma db seed`.
+4. Starts the NestJS server (`node dist/main`).
+
+### 4. Access the application
+
+- API: `http://localhost:8080/api/v1`
+- Swagger: `http://localhost:8080/api/docs`
+- Health check: `http://localhost:8080/api/v1/health`
+
+### 5. Useful Docker commands
+
+```bash
+# Follow API logs
+npm run docker:logs
+
+# Stop and remove containers
+npm run docker:down
+```
+
+If you get a port conflict error while starting containers, change the API port mapping in `docker-compose.yml` (for example, `3001:3000`) and run `npm run docker:up` again.
+
+### Optional: Hybrid local development (API local + DB container)
+
+Use this mode if you want hot reload with `start:dev`:
 
 ```bash
 npm install
+npm run db:up
+npm run db:migrate
+npm run db:seed
+npm run start:dev
 ```
 
-### 3. Configure environment variables
-
-Create a `.env` file in the project root:
+In hybrid mode, use a local `DATABASE_URL` pointing to `localhost`:
 
 ```env
-DATABASE_URL="postgresql://finance_user:finance_pass@localhost:5432/personal_finance?schema=public"
-JWT_SECRET="your-secret-key-here"
-JWT_EXPIRATION="7d"
-PORT=3000
+DATABASE_URL="postgresql://finance_user:change_me@localhost:5432/personal_finance?schema=public"
 ```
-
-### 4. Start the database
-
-```bash
-# Start PostgreSQL via Docker Compose
-npm run db:up
-```
-
-This starts a PostgreSQL 16 container with the credentials defined in `docker-compose.yml`.
-
-### 5. Run migrations
-
-```bash
-npm run db:migrate
-```
-
-### 6. Seed the database
-
-```bash
-npm run db:seed
-```
-
-This populates the tax bracket tables (INSS/IRRF) needed for CLT income calculations.
-
-### 7. Start the server
-
-```bash
-# Development (watch mode)
-npm run start:dev
-
-# Production
-npm run build
-npm run start:prod
-```
-
-The API will be available at `http://localhost:3000/api/v1`.
 
 ### Available npm scripts
 
@@ -980,7 +995,10 @@ The API will be available at `http://localhost:3000/api/v1`.
 | `npm run start`      | Start in standard mode                |
 | `npm run start:prod` | Start compiled production build       |
 | `npm run build`      | Compile TypeScript                    |
-| `npm run db:up`      | Start PostgreSQL container            |
+| `npm run docker:up`  | Build and start API + PostgreSQL      |
+| `npm run docker:down`| Stop full Docker stack                |
+| `npm run docker:logs`| Follow API container logs             |
+| `npm run db:up`      | Start PostgreSQL container only       |
 | `npm run db:down`    | Stop PostgreSQL container             |
 | `npm run db:migrate` | Run Prisma migrations                 |
 | `npm run db:seed`    | Seed the database                     |
@@ -999,7 +1017,7 @@ The API will be available at `http://localhost:3000/api/v1`.
 Interactive API documentation is available via Swagger UI when the server is running:
 
 ```
-http://localhost:3000/api/docs
+http://localhost:8080/api/docs
 ```
 
 The Swagger UI provides:
@@ -1052,7 +1070,7 @@ A realistic end-to-end usage of the API:
 ### 1. Create a user account
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/register \
+curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "João Silva",
@@ -1065,7 +1083,7 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
 ### 2. Login and get JWT token
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/login \
+curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "joao@email.com",
@@ -1078,7 +1096,7 @@ TOKEN="eyJhbGciOi..."
 ### 3. Register a credit card
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/payment-methods \
+curl -X POST http://localhost:8080/api/v1/payment-methods \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1097,7 +1115,7 @@ CARD_ID="uuid-from-response"
 ### 4. Make a one-time purchase
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/purchases \
+curl -X POST http://localhost:8080/api/v1/purchases \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1111,7 +1129,7 @@ curl -X POST http://localhost:3000/api/v1/purchases \
 ### 5. Create an installment purchase
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/installment-plans \
+curl -X POST http://localhost:8080/api/v1/installment-plans \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1126,7 +1144,7 @@ curl -X POST http://localhost:3000/api/v1/installment-plans \
 ### 6. Register monthly income
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/income \
+curl -X POST http://localhost:8080/api/v1/income \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1145,7 +1163,7 @@ curl -X POST http://localhost:3000/api/v1/income \
 ### 7. Set up a recurring expense
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/recurring-transactions \
+curl -X POST http://localhost:8080/api/v1/recurring-transactions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1161,21 +1179,21 @@ curl -X POST http://localhost:3000/api/v1/recurring-transactions \
 ### 8. View the monthly summary
 
 ```bash
-curl http://localhost:3000/api/v1/summary/2026-03 \
+curl http://localhost:8080/api/v1/summary/2026-03 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 9. Check the dashboard with projections
 
 ```bash
-curl "http://localhost:3000/api/v1/dashboard?month=2026-03&projectionMonths=3" \
+curl "http://localhost:8080/api/v1/dashboard?month=2026-03&projectionMonths=3" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ### 10. View the credit card statement
 
 ```bash
-curl "http://localhost:3000/api/v1/payment-methods/$CARD_ID/statement?month=2026-03" \
+curl "http://localhost:8080/api/v1/payment-methods/$CARD_ID/statement?month=2026-03" \
   -H "Authorization: Bearer $TOKEN"
 ```
 

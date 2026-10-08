@@ -67,12 +67,8 @@ export class TaxCalculatorService {
     dependents = 0,
   ): Promise<TaxBreakdown> {
     const [inssRow, irrfRow] = await Promise.all([
-      this.prisma.deductionTable.findUnique({
-        where: { type_validForYear: { type: DeductionTableType.INSS, validForYear: year } },
-      }),
-      this.prisma.deductionTable.findUnique({
-        where: { type_validForYear: { type: DeductionTableType.IRRF, validForYear: year } },
-      }),
+      this.resolveDeductionTable(DeductionTableType.INSS, year),
+      this.resolveDeductionTable(DeductionTableType.IRRF, year),
     ]);
 
     if (!inssRow) throw new EntityNotFoundException('DeductionTable', `INSS/${year}`);
@@ -102,6 +98,24 @@ export class TaxCalculatorService {
       inssSlices,
       irrfDetail,
     };
+  }
+
+  private async resolveDeductionTable(type: DeductionTableType, year: number) {
+    const exactRow = await this.prisma.deductionTable.findUnique({
+      where: { type_validForYear: { type, validForYear: year } },
+    });
+
+    if (exactRow) {
+      return exactRow;
+    }
+
+    return this.prisma.deductionTable.findFirst({
+      where: {
+        type,
+        validForYear: { lte: year },
+      },
+      orderBy: { validForYear: 'desc' },
+    });
   }
 }
 
